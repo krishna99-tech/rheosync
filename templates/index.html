@@ -1,0 +1,885 @@
+{% extends "base.html" %}
+
+{% block title %}Viscosity Testing & Report Generator | Walvoil Viscosity{% endblock %}
+
+{% block nav_test_active %}active{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="/">Home</a>
+  <span>&rsaquo;</span>
+  <a href="#">Quality Control</a>
+  <span>&rsaquo;</span>
+  <a href="#">IoT Viscometer Station</a>
+  <span>&rsaquo;</span>
+  <strong>Add Viscosity Test & Generate Report</strong>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* MOBILE TEMPLATE PICKER (HIDDEN ON DESKTOP) */
+  .mobile-template-picker {
+    display: none;
+  }
+
+  /* DJANGO TEMPLATE SELECTOR TABS */
+  .django-tabs-bar {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+    gap: 4px;
+  }
+  .django-tab {
+    padding: 10px 22px;
+    background: #e2e8f0;
+    color: #475569;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+  }
+  .django-tab.active {
+    background: #fff;
+    color: var(--primary);
+    border-top: 3px solid var(--primary);
+    margin-bottom: -2px;
+    border-bottom: 2px solid #fff;
+  }
+
+  /* DJANGO ALERT BANNER */
+  .django-banner {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  .django-banner.online {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    border-left-color: #22c55e;
+  }
+  .django-banner.offline {
+    background: #fef2f2;
+    border-color: #fecaca;
+    border-left-color: #ef4444;
+  }
+
+  /* DJANGO MODULE / FIELDSET */
+  .module {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+  .module h2 {
+    background: #f8fafc;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-color);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .form-row-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .form-row-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+
+  .workbench-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  #report-form, .django-tabs-bar, .django-banner {
+    width: 100%;
+  }
+
+  .field-box {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .field-box label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+  }
+  .field-box label.required::after {
+    content: ' *';
+    color: var(--danger);
+  }
+  .field-box input, .field-box select {
+    width: 100%;
+    max-width: 260px;
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+    color: #1e293b;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field-box input[type="date"] {
+    max-width: 175px;
+  }
+  .field-box input[type="number"] {
+    max-width: 150px;
+  }
+  .field-box input#part_a_qty,
+  .field-box input#part_b_qty,
+  .field-box input#thinner_qty {
+    max-width: 130px;
+  }
+  .field-box input:focus, .field-box select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(12, 75, 51, 0.15);
+  }
+  .field-box .help {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  /* EVALUATION BAR */
+  .eval-row-box {
+    background: #f8fafc;
+    padding: 18px 24px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .eval-meta-item { display: flex; flex-direction: column; }
+  .eval-meta-item span:first-child { font-size: 11px; color: #64748b; text-transform: uppercase; }
+  .eval-meta-item span:last-child {
+    font-family: 'Roboto Mono', monospace; font-size: 14px; font-weight: 700; color: #1e293b;
+  }
+
+  .eval-center-badge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .eval-center-title {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  .django-badge-large {
+    padding: 8px 36px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 140px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s;
+  }
+  .django-badge-large.pass {
+    background: #dcfce7;
+    color: #15803d;
+    border: 2px solid #86efac;
+  }
+  .django-badge-large.fail {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 2px solid #fca5a5;
+  }
+
+  /* SUBMIT ROW */
+  .submit-row {
+    background: #f8fafc;
+    padding: 14px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+  }
+  .submit-row input[type="submit"],
+  .submit-row input[type="button"] {
+    padding: 9px 18px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #15803d;
+    background: #15803d;
+    color: #fff;
+    transition: all 0.15s;
+  }
+  .submit-row input[type="submit"]:hover,
+  .submit-row input[type="button"]:hover {
+    background: #166534;
+    border-color: #14532d;
+  }
+  .submit-row input[type="submit"].default {
+    background: #15803d;
+    color: #fff;
+    border-color: #166534;
+    font-weight: 700;
+  }
+  .submit-row input[type="submit"].default:hover {
+    background: #166534;
+  }
+  .submit-row input[type="button"].btn-secondary-green {
+    background: #16a34a;
+    border-color: #15803d;
+    color: #fff;
+  }
+  .submit-row input[type="button"].btn-secondary-green:hover {
+    background: #15803d;
+  }
+  .submit-row input[type="button"].closelink {
+    background: #fff;
+    color: #15803d;
+    border: 1px solid #15803d;
+  }
+  .submit-row input[type="button"].closelink:hover {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #166534;
+  }
+
+  /* RESPONSIVE MEDIA QUERIES FOR MOBILE (<= 768px) */
+  @media (max-width: 768px) {
+    .content-header h1 {
+      font-size: 18px;
+    }
+    .form-row-grid-4, .form-row-grid-3 {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+    .django-tabs-bar {
+      display: none !important;
+    }
+    .mobile-template-picker {
+      display: block;
+      margin-bottom: 16px;
+    }
+    .mobile-template-picker label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 6px;
+      display: block;
+      letter-spacing: 0.5px;
+    }
+    .mobile-select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .mobile-template-picker select {
+      width: 100%;
+      padding: 11px 36px 11px 14px;
+      background: #ffffff;
+      border: 2px solid var(--primary);
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1e293b;
+      appearance: none;
+      -webkit-appearance: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+    }
+    .mobile-template-picker select:focus {
+      outline: none;
+      border-color: var(--primary-dark);
+      box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.2);
+    }
+    .mobile-select-arrow {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .django-banner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      font-size: 12px;
+      padding: 12px 14px;
+    }
+    .django-banner button {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 13px;
+    }
+    .field-box input,
+    .field-box select,
+    .field-box input[type="date"],
+    .field-box input[type="number"],
+    .field-box input#part_a_qty,
+    .field-box input#part_b_qty,
+    .field-box input#thinner_qty {
+      max-width: 100% !important;
+      font-size: 14px;
+      padding: 8px 12px;
+    }
+    .eval-row-box {
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      text-align: center;
+      padding: 16px 14px;
+    }
+    .eval-meta-item {
+      align-items: center;
+    }
+    .eval-center-badge-wrap {
+      width: 100%;
+    }
+    .django-badge-large {
+      width: 100%;
+      max-width: 240px;
+    }
+    .submit-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      padding: 14px 12px;
+    }
+    .submit-row > div:first-child {
+      margin-right: 0 !important;
+      justify-content: space-between;
+      width: 100%;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .submit-row input[type="submit"],
+    .submit-row input[type="button"] {
+      width: 100% !important;
+      padding: 12px 16px;
+      font-size: 14px;
+      text-align: center;
+    }
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workbench-container">
+  <div class="content-header">
+    <h1>Viscosity Test & Report Generator</h1>
+  </div>
+
+  <!-- DJANGO TABS: PRIMER VS PAINT COAT -->
+  <div class="django-tabs-bar">
+    <button type="button" class="django-tab active" id="tab-primer" onclick="selectTemplate('Primer ')">
+      🎨 Primer Coat Template (Sheet: Primer )
+    </button>
+    <button type="button" class="django-tab" id="tab-paint" onclick="selectTemplate('Paint Coat ')">
+      🖌️ Paint Top Coat Template (Sheet: Paint Coat )
+    </button>
+  </div>
+
+  <!-- MOBILE TEMPLATE DROPDOWN PICKER (VISIBLE ONLY ON MOBILE <= 768px) -->
+  <div class="mobile-template-picker">
+    <label for="mobile-template-select">Coating Process Template</label>
+    <div class="mobile-select-wrapper">
+      <select id="mobile-template-select" onchange="selectTemplate(this.value)">
+        <option value="Primer ">🎨 Primer Coat Template (Sheet: Primer )</option>
+        <option value="Paint Coat ">🖌️ Paint Top Coat Template (Sheet: Paint Coat )</option>
+      </select>
+      <div class="mobile-select-arrow">▼</div>
+    </div>
+  </div>
+
+  <!-- DJANGO TELEMETRY ALERT BANNER -->
+  <div class="django-banner offline" id="telemetry-banner">
+    <div>
+      <strong id="banner-status-txt">STATION OFFLINE:</strong>
+      <span id="banner-desc-txt">Waiting for incoming UDP packets on port 63363...</span>
+      (IP: <span id="banner-ip-txt">Waiting</span> | Last Seen: <span id="banner-time-txt">--</span>)
+    </div>
+    <div>
+      <button type="button" onclick="captureLiveValue()" style="background: #15803d; color:#fff; border:none; padding: 5px 12px; border-radius:3px; font-size:12px; font-weight:600; cursor:pointer;">
+        Capture to Form
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN TEST FORM -->
+  <form id="report-form" onsubmit="event.preventDefault(); submitReport();">
+    <input type="hidden" id="process_type" name="process_type" value="Primer ">
+
+    <!-- FIELDSET 1: IDENTIFICATION & WORK SHIFT -->
+    <fieldset class="module">
+      <h2>1. Test Identification & Work Shift</h2>
+      <div class="form-row-grid-3">
+        <div class="field-box">
+          <label for="part_number" class="required">Part / Model Number</label>
+          <input type="text" id="part_number" name="part_number" value="1021F0001" placeholder="e.g. 1021F0001" required>
+          <div class="help">Component model code (e.g. 1021F0001 or 1021H0001-H).</div>
+        </div>
+        <div class="field-box">
+          <label for="operator_id" class="required">Operator ID (Cell H7)</label>
+          <input type="text" id="operator_id" name="operator_id" placeholder="e.g. Operator Name or ID" required>
+          <div class="help">Assigned quality inspector on shift.</div>
+        </div>
+        <div class="field-box">
+          <label for="shift" class="required">Shift (Cell C8)</label>
+          <input type="text" id="shift" name="shift" value="Shift A" required>
+          <div class="help">Production shift (auto-populated by live shift).</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- FIELDSET 2: PART A DETAILS -->
+    <fieldset class="module">
+      <h2>2. PART A Material Specification</h2>
+      <div class="form-row-grid-4">
+        <div class="field-box">
+          <label for="part_a_batch" class="required">Batch Number (G19)</label>
+          <input type="text" id="part_a_batch" name="part_a_batch" value="PWH2636103140" required>
+        </div>
+        <div class="field-box">
+          <label for="part_a_mfg" class="required">Manufacturing Date (G20)</label>
+          <input type="date" id="part_a_mfg" name="part_a_mfg" required>
+        </div>
+        <div class="field-box">
+          <label for="part_a_exp" class="required">Expiry Date (G21)</label>
+          <input type="date" id="part_a_exp" name="part_a_exp" required>
+        </div>
+        <div class="field-box">
+          <label for="part_a_qty">In Take Quantity (G22)</label>
+          <input type="text" id="part_a_qty" name="part_a_qty" value="4.0 L">
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- FIELDSET 3: PART B DETAILS -->
+    <fieldset class="module">
+      <h2>3. PART B Material Specification</h2>
+      <div class="form-row-grid-4">
+        <div class="field-box">
+          <label for="part_b_batch" class="required">Batch Number (G25)</label>
+          <input type="text" id="part_b_batch" name="part_b_batch" value="PWH2636103141" required>
+        </div>
+        <div class="field-box">
+          <label for="part_b_mfg" class="required">Manufacturing Date (G26)</label>
+          <input type="date" id="part_b_mfg" name="part_b_mfg" required>
+        </div>
+        <div class="field-box">
+          <label for="part_b_exp" class="required">Expiry Date (G27)</label>
+          <input type="date" id="part_b_exp" name="part_b_exp" required>
+        </div>
+        <div class="field-box">
+          <label for="part_b_qty">In Take Quantity (G28)</label>
+          <input type="text" id="part_b_qty" name="part_b_qty" value="1.0 L">
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- FIELDSET 4: THINNER DETAILS -->
+    <fieldset class="module">
+      <h2>4. Thinner Specification</h2>
+      <div class="form-row-grid-4">
+        <div class="field-box">
+          <label for="thinner_batch">Batch Number (G101)</label>
+          <input type="text" id="thinner_batch" name="thinner_batch" value="THN20260901">
+        </div>
+        <div class="field-box">
+          <label for="thinner_mfg">Manufacturing Date (G102)</label>
+          <input type="date" id="thinner_mfg" name="thinner_mfg">
+        </div>
+        <div class="field-box">
+          <label for="thinner_exp">Expiry Date (G103)</label>
+          <input type="date" id="thinner_exp" name="thinner_exp">
+        </div>
+        <div class="field-box">
+          <label for="thinner_qty">In Take Quantity (G104)</label>
+          <input type="text" id="thinner_qty" name="thinner_qty" value="0.5 L">
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- FIELDSET 5: VISCOSITY SPECIFICATIONS & MEASUREMENT -->
+    <fieldset class="module">
+      <h2>5. Viscosity Specifications & Actual Reading</h2>
+      <div class="form-row-grid-3">
+        <div class="field-box">
+          <label for="min_viscosity" class="required">Min Specification (Cell G108)</label>
+          <input type="number" step="0.01" id="min_viscosity" name="min_viscosity" value="18.00" oninput="calculateResult()" required>
+          <div class="help">Lower tolerance limit in sec / cSt.</div>
+        </div>
+        <div class="field-box">
+          <label for="max_viscosity" class="required">Max Specification (Cell H108)</label>
+          <input type="number" step="0.01" id="max_viscosity" name="max_viscosity" value="24.00" oninput="calculateResult()" required>
+          <div class="help">Upper tolerance limit in sec / cSt.</div>
+        </div>
+        <div class="field-box">
+          <label for="actual_viscosity" class="required" style="color: var(--primary);">Actual Value (Cell I108)</label>
+          <input type="number" step="0.01" id="actual_viscosity" name="actual_viscosity" value="21.45" oninput="calculateResult()" style="font-weight:bold; border-color: var(--primary);" required>
+          <div class="help">Captured via IoT or entered manually.</div>
+        </div>
+      </div>
+
+      <!-- EVALUATION STRIP: CENTERED FIXED PASS/FAIL BADGE -->
+      <div class="eval-row-box">
+        <div class="eval-meta-item">
+          <span>Acceptable Range</span>
+          <span id="spec-range-label">18.00 — 24.00</span>
+        </div>
+        <div class="eval-meta-item" style="text-align: right;">
+          <span>Target Sheet & Cell</span>
+          <span id="eval-target-label">Primer  | Cell I108</span>
+        </div>
+        <div class="eval-center-badge-wrap">
+          <span class="eval-center-title">Overall Evaluation (Cell H6)</span>
+          <div class="django-badge-large pass" id="eval-result-badge">PASS</div>
+          <span id="overall-status-text" style="font-size: 11px; font-weight: 600; color: #15803d; margin-top: 4px;">Pass</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- DJANGO SUBMIT ROW -->
+    <div class="submit-row">
+      <div style="margin-right: auto; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: #64748b;">Test Status:</span>
+        <span class="django-badge-large pass" id="eval-result-badge-sticky" style="font-size: 11px; padding: 3px 12px; min-width: auto;">PASS</span>
+      </div>
+      <input type="button" value="Clear Form" class="closelink" onclick="resetFormDefaults()">
+      <input type="button" value="Save and add another" class="btn-secondary-green" onclick="submitAndReset()">
+      <input type="submit" value="Save & Generate Report (Excel & PDF)" class="default" id="btn-save-report">
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function initDefaultDates() {
+    const today = new Date().toISOString().split('T')[0];
+    const future = new Date();
+    future.setFullYear(future.getFullYear() + 1);
+    const expDate = future.toISOString().split('T')[0];
+
+    if (!document.getElementById('part_a_mfg').value) document.getElementById('part_a_mfg').value = today;
+    if (!document.getElementById('part_a_exp').value) document.getElementById('part_a_exp').value = expDate;
+    if (!document.getElementById('part_b_mfg').value) document.getElementById('part_b_mfg').value = today;
+    if (!document.getElementById('part_b_exp').value) document.getElementById('part_b_exp').value = expDate;
+    if (!document.getElementById('thinner_mfg').value) document.getElementById('thinner_mfg').value = today;
+    if (!document.getElementById('thinner_exp').value) document.getElementById('thinner_exp').value = expDate;
+  }
+  initDefaultDates();
+
+  // Template Switcher (Primer vs Paint Coat)
+  function selectTemplate(templateName, broadcast = true) {
+    document.getElementById('process_type').value = templateName;
+    const tabPrimer = document.getElementById('tab-primer');
+    const tabPaint = document.getElementById('tab-paint');
+    const targetLabel = document.getElementById('eval-target-label');
+    const mobileSelect = document.getElementById('mobile-template-select');
+
+    if (mobileSelect && mobileSelect.value !== templateName) {
+      mobileSelect.value = templateName;
+    }
+
+    if (templateName === 'Primer ') {
+      if (tabPrimer) tabPrimer.className = 'django-tab active';
+      if (tabPaint) tabPaint.className = 'django-tab';
+      if (targetLabel) targetLabel.innerText = 'Primer  | Cell I108';
+      document.getElementById('min_viscosity').value = '18.00';
+      document.getElementById('max_viscosity').value = '24.00';
+    } else {
+      if (tabPaint) tabPaint.className = 'django-tab active';
+      if (tabPrimer) tabPrimer.className = 'django-tab';
+      if (targetLabel) targetLabel.innerText = 'Paint Coat  | Cell I108';
+      document.getElementById('min_viscosity').value = '22.00';
+      document.getElementById('max_viscosity').value = '28.00';
+    }
+    calculateResult();
+
+    if (broadcast && typeof broadcastFormChange === 'function') {
+      broadcastFormChange('process_type', templateName);
+    }
+  }
+
+  // Cross-Device Live Form Synchronization
+  const syncFields = [
+    'part_number', 'operator_id', 'shift',
+    'part_a_batch', 'part_a_mfg', 'part_a_exp', 'part_a_qty',
+    'part_b_batch', 'part_b_mfg', 'part_b_exp', 'part_b_qty',
+    'thinner_batch', 'thinner_mfg', 'thinner_exp', 'thinner_qty',
+    'min_viscosity', 'max_viscosity', 'actual_viscosity'
+  ];
+
+  let syncDebounceTimer = null;
+  function broadcastFormChange(fieldId, val) {
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(() => {
+      const payload = {
+        cid: typeof myClientId !== 'undefined' ? myClientId : 'local',
+        dev: typeof myDeviceType !== 'undefined' ? myDeviceType : 'PC',
+        form_data: { [fieldId]: val }
+      };
+      if (fieldId === 'operator_id') {
+        payload.operator = val;
+      }
+      fetch('/api/session/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    }, 150);
+  }
+
+  // Bind input listeners for all synchronized fields
+  document.addEventListener('DOMContentLoaded', () => {
+    syncFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', (e) => {
+          const val = e.target.value;
+          if (id === 'operator_id') {
+            // Instantly sync navbar, mobile dropdown, and sidebar operator labels
+            const n1 = document.getElementById('nav-operator-name'); if (n1) n1.innerText = val || 'Operator';
+            const n2 = document.getElementById('m-nav-operator-name'); if (n2) n2.innerText = val || 'Operator';
+            const n3 = document.getElementById('side-operator-name'); if (n3) n3.innerText = val || 'Operator';
+            localStorage.setItem('walvoil_operator', val);
+          }
+          broadcastFormChange(id, val);
+        });
+        el.addEventListener('change', (e) => {
+          const val = e.target.value;
+          if (id === 'operator_id') {
+            const n1 = document.getElementById('nav-operator-name'); if (n1) n1.innerText = val || 'Operator';
+            const n2 = document.getElementById('m-nav-operator-name'); if (n2) n2.innerText = val || 'Operator';
+            const n3 = document.getElementById('side-operator-name'); if (n3) n3.innerText = val || 'Operator';
+            localStorage.setItem('walvoil_operator', val);
+          }
+          broadcastFormChange(id, val);
+        });
+      }
+    });
+  });
+
+  // Hook telemetry updates and incoming session sync to page
+  function onTelemetryUpdate(station, isOnline, session) {
+    const banner = document.getElementById('telemetry-banner');
+    const bannerStatus = document.getElementById('banner-status-txt');
+    const bannerDesc = document.getElementById('banner-desc-txt');
+    const bannerIp = document.getElementById('banner-ip-txt');
+    const bannerTime = document.getElementById('banner-time-txt');
+
+    if (bannerIp) bannerIp.innerText = station.sender_ip || 'Auto-Detecting...';
+    if (bannerTime) bannerTime.innerText = station.time || '--';
+
+    if (banner) {
+      if (isOnline) {
+        banner.className = 'django-banner online';
+        bannerStatus.innerText = 'STATION ONLINE:';
+        bannerDesc.innerText = 'Streaming packets actively from IoT Viscometer.';
+      } else {
+        banner.className = 'django-banner offline';
+        bannerStatus.innerText = 'STATION OFFLINE:';
+        bannerDesc.innerText = 'Waiting for incoming UDP packets on port 63363...';
+      }
+    }
+
+    // Live Cross-Device Form Mirroring
+    if (session && session.updated_by && session.updated_by !== myClientId && session.form_data) {
+      const fd = session.form_data;
+      if (fd.process_type && fd.process_type !== document.getElementById('process_type').value) {
+        selectTemplate(fd.process_type, false);
+      }
+      for (const [key, val] of Object.entries(fd)) {
+        if (key === 'process_type') continue;
+        const elem = document.getElementById(key);
+        // Only update if element exists, differs from current value, and operator is not actively typing in it
+        if (elem && elem !== document.activeElement && elem.value !== String(val)) {
+          elem.value = val;
+          if (key === 'min_viscosity' || key === 'max_viscosity' || key === 'actual_viscosity') {
+            calculateResult();
+          }
+        }
+      }
+    }
+  }
+
+  function captureLiveValue() {
+    const liveVal = parseFloat(currentLiveViscosity);
+    if (!isNaN(liveVal) && liveVal > 0) {
+      const formatted = liveVal.toFixed(2);
+      document.getElementById('actual_viscosity').value = formatted;
+      broadcastFormChange('actual_viscosity', formatted);
+      showToast(`Captured live viscosity: ${formatted} cSt`, 'success');
+      calculateResult();
+    } else {
+      showToast('No active live reading from device. Check UDP connection.', 'error');
+    }
+  }
+
+  function calculateResult() {
+    const min = parseFloat(document.getElementById('min_viscosity').value);
+    const max = parseFloat(document.getElementById('max_viscosity').value);
+    const actual = parseFloat(document.getElementById('actual_viscosity').value);
+
+    document.getElementById('spec-range-label').innerText = `${min.toFixed(2)} — ${max.toFixed(2)}`;
+
+    const badge = document.getElementById('eval-result-badge');
+    const stickyBadge = document.getElementById('eval-result-badge-sticky');
+    const statusText = document.getElementById('overall-status-text');
+
+    if (!isNaN(min) && !isNaN(max) && !isNaN(actual)) {
+      const isPass = (actual >= min && actual <= max);
+      const resClass = isPass ? 'django-badge-large pass' : 'django-badge-large fail';
+      const resText = isPass ? 'PASS' : 'FAIL';
+
+      if (badge) {
+        badge.className = resClass;
+        badge.innerText = resText;
+      }
+      if (stickyBadge) {
+        stickyBadge.className = resClass;
+        stickyBadge.innerText = resText;
+        stickyBadge.style.fontSize = '11px';
+        stickyBadge.style.padding = '3px 12px';
+        stickyBadge.style.minWidth = 'auto';
+      }
+      if (statusText) {
+        statusText.innerText = isPass ? 'In Tolerance (Pass)' : 'Out of Tolerance (Fail)';
+        statusText.style.color = isPass ? '#15803d' : '#b91c1c';
+      }
+    }
+  }
+  calculateResult();
+
+  function resetFormDefaults() {
+    document.getElementById('report-form').reset();
+    initDefaultDates();
+    selectTemplate('Primer ');
+  }
+
+  async function submitReport() {
+    const btn = document.getElementById('btn-save-report');
+    btn.disabled = true;
+    btn.value = 'Saving & Exporting PDF...';
+
+    const payload = {
+      process_type: document.getElementById('process_type').value,
+      part_number: document.getElementById('part_number').value.trim(),
+      operator_id: document.getElementById('operator_id').value.trim(),
+      shift: document.getElementById('shift').value.trim(),
+      part_a: {
+        batch: document.getElementById('part_a_batch').value.trim(),
+        mfg: document.getElementById('part_a_mfg').value,
+        exp: document.getElementById('part_a_exp').value,
+        qty: document.getElementById('part_a_qty').value.trim()
+      },
+      part_b: {
+        batch: document.getElementById('part_b_batch').value.trim(),
+        mfg: document.getElementById('part_b_mfg').value,
+        exp: document.getElementById('part_b_exp').value,
+        qty: document.getElementById('part_b_qty').value.trim()
+      },
+      thinner: {
+        batch: document.getElementById('thinner_batch').value.trim(),
+        mfg: document.getElementById('thinner_mfg').value,
+        exp: document.getElementById('thinner_exp').value,
+        qty: document.getElementById('thinner_qty').value.trim()
+      },
+      min_viscosity: parseFloat(document.getElementById('min_viscosity').value),
+      max_viscosity: parseFloat(document.getElementById('max_viscosity').value),
+      actual_viscosity: parseFloat(document.getElementById('actual_viscosity').value)
+    };
+
+    try {
+      const res = await fetch('/api/save_report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Report saved! Result: ${data.result.toUpperCase()} | Saved to Reports 2026/`, 'success');
+      } else {
+        showToast(`Error: ${data.error || 'Unable to save report'}`, 'error');
+      }
+    } catch (err) {
+      showToast(`Server communication error: ${err}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.value = 'Save & Generate Report (Excel & PDF)';
+    }
+  }
+
+  function submitAndReset() {
+    submitReport().then(() => {
+      document.getElementById('part_number').value = '';
+      document.getElementById('part_a_batch').value = '';
+      document.getElementById('part_b_batch').value = '';
+    });
+  }
+
+  // Two-way sync operator ID with navbar & localStorage
+  document.addEventListener("DOMContentLoaded", () => {
+    const opInput = document.getElementById('operator_id');
+    const savedOp = localStorage.getItem('walvoil_operator');
+    if (opInput && savedOp && savedOp !== 'Operator') {
+      opInput.value = savedOp;
+    }
+    if (opInput) {
+      opInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        if (val) {
+          localStorage.setItem('walvoil_operator', val);
+          const navOp = document.getElementById('nav-operator-name');
+          if (navOp) navOp.innerText = val;
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

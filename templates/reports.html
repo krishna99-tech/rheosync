@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+
+{% block title %}Archived Reports (Hierarchical Storage) | Walvoil Viscosity{% endblock %}
+
+{% block nav_reports_active %}active{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="/">Home</a>
+  <span>&rsaquo;</span>
+  <a href="#">Quality Control</a>
+  <span>&rsaquo;</span>
+  <strong>Archived Reports (Hierarchical Storage)</strong>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* CHANGELIST SPECIFIC STYLES */
+  .reports-stats-strip {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    flex: 1;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 12px 18px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+  .stat-card .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .stat-card .stat-val {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 2px;
+  }
+
+  .changelist-toolbar {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 4px 4px 0 0;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .search-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 400px;
+  }
+  .search-group input {
+    width: 100%;
+    padding: 7px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .search-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  .filter-pills-bar {
+    display: flex;
+    gap: 8px;
+  }
+  .filter-pill-btn {
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: #f8fafc;
+    color: #475569;
+    transition: all 0.15s;
+  }
+  .filter-pill-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary-dark);
+  }
+
+  .module-table-wrapper {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  table.result_list {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  table.result_list th {
+    background: #f1f5f9;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 1px solid var(--border-color);
+  }
+  table.result_list td {
+    padding: 11px 14px;
+    font-size: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+  }
+  table.result_list tr:nth-child(even) { background: #fafafa; }
+  table.result_list tr:hover { background: #f8fafc; }
+
+  .tag-process {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .tag-process.primer {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+  .tag-process.paint {
+    background: #faf5ff;
+    color: #7e22ce;
+    border: 1px solid #e9d5ff;
+  }
+
+  .tag-result {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .tag-result.pass {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+  }
+  .tag-result.fail {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+
+  .action-links { display: flex; gap: 6px; }
+  .btn-action-sm {
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn-action-sm:hover { text-decoration: none; }
+  .btn-action-sm.excel { border-color: #86efac; color: #166534; background: #f0fdf4; }
+  .btn-action-sm.excel:hover { background: #dcfce7; }
+  .btn-action-sm.pdf { border-color: #fca5a5; color: #991b1b; background: #fef2f2; }
+  .btn-action-sm.pdf:hover { background: #fee2e2; }
+
+  .path-note-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #1e3a8a;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .object-tools {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .object-tools a, a.btn-tool-add, a.btn-tool-export {
+    background: #15803d !important;
+    color: #fff !important;
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+  }
+  a.btn-tool-export {
+    background: #16a34a !important;
+  }
+  .object-tools a:hover, a.btn-tool-add:hover {
+    background: #166534 !important;
+  }
+  a.btn-tool-export:hover {
+    background: #15803d !important;
+  }
+
+  /* RESPONSIVE MEDIA QUERIES FOR MOBILE (<= 768px) */
+  @media (max-width: 768px) {
+    .content-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    .content-header h1 {
+      font-size: 18px;
+    }
+    .object-tools {
+      width: 100%;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .object-tools a {
+      width: 100%;
+      justify-content: center;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+    .reports-stats-strip {
+      flex-direction: column;
+      gap: 10px;
+    }
+    .changelist-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      padding: 12px;
+    }
+    .search-group {
+      max-width: 100%;
+    }
+    .filter-pills-bar {
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .path-note-box {
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+      font-size: 11px;
+    }
+    .path-note-box button {
+      width: 100%;
+      padding: 8px 12px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="content-header">
+    <h1>Archived Viscosity Reports (Hierarchical Storage)</h1>
+    <div class="object-tools">
+      <a href="/" class="btn-tool-add">+ Add New Viscosity Test</a>
+      <a href="/download_csv" class="btn-tool-export">📥 Export Raw Logs CSV</a>
+    </div>
+  </div>
+
+  <!-- FOLDER HIERARCHY STORAGE NOTE -->
+  <div class="path-note-box">
+    <div>
+      <strong>Storage Order:</strong>
+      <code>Reports / Reports &lt;Year&gt; / &lt;Month&gt; / &lt;Day&gt;_&lt;Month&gt;_&lt;Year&gt; / &lt;Primer Coat | Paint Top Coat&gt; / &lt;Test Pass | Test Fail&gt; / Excel Report &amp; Pdf Report /</code>
+    </div>
+    <div>
+      <button onclick="loadAllReports()" style="background:#15803d; color:#fff; border:none; padding:5px 12px; border-radius:3px; font-size:11px; font-weight:600; cursor:pointer;">
+        ↻ Refresh Table
+      </button>
+    </div>
+  </div>
+
+  <!-- STATS STRIP -->
+  <div class="reports-stats-strip">
+    <div class="stat-card">
+      <div class="stat-label">Total Reports Logged</div>
+      <div class="stat-val" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Passed Batches</div>
+      <div class="stat-val" id="stat-passed" style="color: #15803d;">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Failed Batches</div>
+      <div class="stat-val" id="stat-failed" style="color: #ba2121;">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Compliance Rate</div>
+      <div class="stat-val" id="stat-compliance" style="color: var(--primary);">--%</div>
+    </div>
+  </div>
+
+  <!-- CHANGELIST TOOLBAR -->
+  <div class="changelist-toolbar">
+    <div class="search-group">
+      <input type="text" id="filter-search-input" placeholder="Search by Part Number, Batch, Operator..." oninput="applyFilters()">
+    </div>
+    <div class="filter-pills-bar">
+      <button type="button" class="filter-pill-btn active" id="pill-all" onclick="setProcessFilter('all')">All Processes</button>
+      <button type="button" class="filter-pill-btn" id="pill-primer" onclick="setProcessFilter('primer')">🎨 Primer Only</button>
+      <button type="button" class="filter-pill-btn" id="pill-paint" onclick="setProcessFilter('paint')">🖌️ Paint Coat Only</button>
+      <button type="button" class="filter-pill-btn" id="pill-pass" onclick="setStatusFilter('pass')">✓ Pass Only</button>
+      <button type="button" class="filter-pill-btn" id="pill-fail" onclick="setStatusFilter('fail')">✕ Fail Only</button>
+    </div>
+  </div>
+
+  <!-- CHANGELIST TABLE -->
+  <div class="module-table-wrapper">
+    <table class="result_list">
+      <thead>
+        <tr>
+          <th scope="col">Date / Time</th>
+          <th scope="col">Template Process</th>
+          <th scope="col">Part Number</th>
+          <th scope="col">Part A Batch</th>
+          <th scope="col">Part B Batch</th>
+          <th scope="col">Measured Value</th>
+          <th scope="col">Result</th>
+          <th scope="col">Action Downloads</th>
+        </tr>
+      </thead>
+      <tbody id="reports-table-body">
+        <tr>
+          <td colspan="8" style="text-align:center; padding: 24px; color: #94a3b8;">
+            Loading archived reports from database...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let allReportsCache = [];
+  let currentProcessFilter = 'all';
+  let currentStatusFilter = 'all';
+
+  async function loadAllReports() {
+    try {
+      const res = await fetch('/api/reports');
+      if (!res.ok) return;
+      allReportsCache = await res.json();
+      updateStats();
+      applyFilters();
+    } catch (err) {
+      console.warn('Error fetching reports:', err);
+    }
+  }
+
+  function updateStats() {
+    const total = allReportsCache.length;
+    const passed = allReportsCache.filter(r => r.result.toLowerCase() === 'pass').length;
+    const failed = allReportsCache.filter(r => r.result.toLowerCase() === 'fail').length;
+    const compliance = total > 0 ? Math.round((passed / total) * 100) : 0;
+
+    document.getElementById('stat-total').innerText = total;
+    document.getElementById('stat-passed').innerText = passed;
+    document.getElementById('stat-failed').innerText = failed;
+    document.getElementById('stat-compliance').innerText = total > 0 ? `${compliance}%` : '--%';
+  }
+
+  function setProcessFilter(filterType) {
+    if (filterType === 'all') {
+      currentProcessFilter = 'all';
+      currentStatusFilter = 'all';
+      document.querySelectorAll('.filter-pill-btn').forEach(btn => btn.classList.remove('active'));
+      const pillAll = document.getElementById('pill-all');
+      if (pillAll) pillAll.classList.add('active');
+    } else {
+      currentProcessFilter = (currentProcessFilter === filterType) ? 'all' : filterType;
+      const pillAll = document.getElementById('pill-all');
+      if (pillAll) pillAll.classList.toggle('active', currentProcessFilter === 'all' && currentStatusFilter === 'all');
+      const pillPrimer = document.getElementById('pill-primer');
+      if (pillPrimer) pillPrimer.classList.toggle('active', currentProcessFilter === 'primer');
+      const pillPaint = document.getElementById('pill-paint');
+      if (pillPaint) pillPaint.classList.toggle('active', currentProcessFilter === 'paint');
+    }
+    applyFilters();
+  }
+
+  function setStatusFilter(status) {
+    if (currentStatusFilter === status) {
+      currentStatusFilter = 'all';
+      const pill = document.getElementById(`pill-${status}`);
+      if (pill) pill.classList.remove('active');
+      const pillAll = document.getElementById('pill-all');
+      if (pillAll && currentProcessFilter === 'all') pillAll.classList.add('active');
+    } else {
+      currentStatusFilter = status;
+      const pillAll = document.getElementById('pill-all');
+      if (pillAll) pillAll.classList.remove('active');
+      const pillPass = document.getElementById('pill-pass');
+      if (pillPass) pillPass.classList.toggle('active', status === 'pass');
+      const pillFail = document.getElementById('pill-fail');
+      if (pillFail) pillFail.classList.toggle('active', status === 'fail');
+    }
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const searchInput = document.getElementById('filter-search-input');
+    const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const tbody = document.getElementById('reports-table-body');
+    if (!tbody) return;
+
+    let filtered = (allReportsCache || []).filter(r => {
+      const proc = (r.process_type || '').toLowerCase();
+      const res = (r.result || '').toLowerCase().trim();
+
+      // Process filter
+      const isPrimer = proc.includes('primer');
+      if (currentProcessFilter === 'primer' && !isPrimer) return false;
+      if (currentProcessFilter === 'paint' && isPrimer) return false;
+
+      // Status filter
+      if (currentStatusFilter === 'pass' && res !== 'pass') return false;
+      if (currentStatusFilter === 'fail' && res !== 'fail') return false;
+
+      // Search query
+      if (search) {
+        const textBlob = `${r.part_number || ''} ${r.part_a_batch || ''} ${r.part_b_batch || ''} ${r.operator_id || ''} ${r.created_at || ''}`.toLowerCase();
+        if (!textBlob.includes(search)) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      if ((allReportsCache || []).length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 36px 24px; color: #64748b;">
+          <div style="font-size: 28px; margin-bottom: 8px;">📂</div>
+          <strong style="display:block; font-size: 14px; color: #334155; margin-bottom: 4px;">No Archived Reports Logged</strong>
+          <span style="font-size: 12px; color: #94a3b8;">No viscosity test reports have been saved yet. Complete a test on the workbench to automatically archive your first Excel & PDF report.</span>
+          <div style="margin-top: 14px;">
+            <a href="/" style="display:inline-block; background: var(--primary); color: #fff; padding: 6px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; text-decoration: none;">+ Go to Test Workbench</a>
+          </div>
+        </td></tr>`;
+      } else {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px; color: #94a3b8;">No matching reports found for the selected filter or search criteria.</td></tr>`;
+      }
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(r => {
+      const proc = (r.process_type || '').toLowerCase();
+      const isPrimer = proc.includes('primer');
+      const procClass = isPrimer ? 'primer' : 'paint';
+      const procLabel = isPrimer ? 'Primer Coat' : 'Paint Top Coat';
+      const resStr = (r.result || '').trim();
+      const resClass = resStr.toLowerCase() === 'pass' ? 'pass' : 'fail';
+
+      return `
+        <tr>
+          <td style="font-family: 'Roboto Mono', monospace;">${r.created_at || '--'}</td>
+          <td><span class="tag-process ${procClass}">${procLabel}</span></td>
+          <td style="font-weight: 600;">${r.part_number || '--'}</td>
+          <td style="font-family: 'Roboto Mono', monospace;">${r.part_a_batch || '--'}</td>
+          <td style="font-family: 'Roboto Mono', monospace;">${r.part_b_batch || '--'}</td>
+          <td style="font-family: 'Roboto Mono', monospace; font-weight: 700;">${r.actual_viscosity !== undefined ? r.actual_viscosity : '--'} cSt</td>
+          <td>
+            <span class="tag-result ${resClass}">${resStr || 'N/A'}</span>
+          </td>
+          <td>
+            <div class="action-links">
+              <a href="/api/download/${r.id}/excel" class="btn-action-sm excel" title="Download Excel (.xlsx)">
+                📊 Excel
+              </a>
+              <a href="/api/download/${r.id}/pdf" class="btn-action-sm pdf" title="Download PDF (.pdf)">
+                📄 PDF
+              </a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  loadAllReports();
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+# ==============================================================================
+# WALVOIL — IoT VISCOSITY MEASUREMENT & REPORTING SYSTEM
+# Pinned Application Dependencies (Tested & Verified Environment)
+# ==============================================================================
+
+# Core Web Application Framework & Dashboard
+Flask==3.0.3
+Werkzeug==3.0.1
+Jinja2==3.1.6
+
+# Excel Report Generation & Template Processing (Viscosity report.xlsx)
+openpyxl==3.1.5
+et-xmlfile==2.0.0
+Pillow==11.1.0
+
+# Production WSGI Server (Linux only: Ubuntu, Debian, CentOS, Raspberry Pi)
+gunicorn==23.0.0; sys_platform != 'win32'
+
+# Native Microsoft Excel COM Automation for PDF Export (Windows only)
+pywin32==310; sys_platform == 'win32'

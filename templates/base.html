@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Walvoil Viscosity Administration{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #15803d;
+      --primary-dark: #166534;
+      --secondary: #c2410c;
+      --header-bg: #ea580c;
+      --breadcrumbs-bg: #f8fafc;
+      --breadcrumbs-link: #15803d;
+      --body-bg: #f8fafc;
+      --body-fg: #334155;
+      --border-color: #cbd5e1;
+      --border-light: #e2e8f0;
+      --danger: #ba2121;
+      --success: #15803d;
+      --btn-green: #15803d;
+      --btn-green-hover: #166534;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: var(--body-bg);
+      color: var(--body-fg);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    a { color: #0284c7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* DJANGO FIXED TOPBAR */
+    #header {
+      background: var(--header-bg);
+      color: #fff;
+      padding: 0 20px;
+      height: 52px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--secondary);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .burger-btn {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 4px;
+      padding: 6px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .burger-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    #branding { display: flex; align-items: center; gap: 10px; }
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .brand-link:hover { text-decoration: none; }
+    .nav-logo-wrap {
+      background: #ffffff;
+      padding: 2px 10px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      height: 34px;
+    }
+    .nav-logo-img {
+      height: 26px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+    .nav-title-text {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.2px;
+    }
+
+    #user-tools {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    #user-tools strong { color: #fff; }
+    #user-tools a { color: #fed7aa; }
+    #user-tools a:hover { color: #fff; }
+
+    .sys-time-badge {
+      font-family: 'Roboto Mono', monospace;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 4px 10px;
+      border-radius: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .shift-live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .shift-indicator-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
+      animation: pulseDot 2s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* CONNECTED DEVICES PILL */
+    .devices-live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .devices-indicator-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 6px #38bdf8;
+      animation: pulseDot 2.5s infinite;
+    }
+
+    /* THREE-DOTS BUTTON FOR MOBILE */
+    .dots-btn {
+      display: none;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 4px;
+      padding: 6px 8px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .dots-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* MOBILE USER DROPDOWN */
+    .mobile-user-dropdown {
+      display: none;
+      position: fixed;
+      top: 54px;
+      right: 12px;
+      width: 280px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--border-color);
+      padding: 12px 14px;
+      z-index: 1060;
+    }
+    .mobile-user-dropdown.open {
+      display: block;
+      animation: dropdownFade 0.15s ease-out;
+    }
+    @keyframes dropdownFade {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .m-user-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.6px;
+      margin-bottom: 4px;
+    }
+    .m-user-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .m-clock-val {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 3px;
+      border: 1px solid #e2e8f0;
+    }
+    .m-user-btn-switch {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .m-user-btn-switch:hover {
+      background: #e2e8f0;
+    }
+    .m-user-link {
+      display: block;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.12s;
+    }
+    .m-user-link:hover {
+      background: #f1f5f9;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    /* SIDEBAR USER CARD */
+    .sidebar-user-card {
+      margin: 0 16px 14px 16px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    /* FIXED BREADCRUMBS */
+    .breadcrumbs {
+      background: var(--breadcrumbs-bg);
+      padding: 0 24px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 12px;
+      color: #64748b;
+      position: fixed;
+      top: 52px;
+      left: 0;
+      right: 0;
+      z-index: 999;
+    }
+    .breadcrumbs a { color: var(--breadcrumbs-link); font-weight: 600; }
+    .breadcrumbs span { color: #94a3b8; margin: 0 5px; }
+
+    /* LAYOUT WRAPPER */
+    #main-layout {
+      margin-top: 90px;
+      display: flex;
+      min-height: calc(100vh - 90px);
+      width: 100%;
+      position: relative;
+    }
+
+    /* FIXED STICKY SIDEBAR */
+    #nav-sidebar {
+      width: 260px;
+      background: #f1f5f9;
+      border-right: 1px solid var(--border-color);
+      padding: 16px 0;
+      position: fixed;
+      top: 90px;
+      left: 0;
+      bottom: 0;
+      overflow-y: auto;
+      box-sizing: border-box;
+      transition: transform 0.25s ease;
+      z-index: 900;
+    }
+    #nav-sidebar.collapsed {
+      transform: translateX(-260px);
+    }
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 8px 20px;
+      letter-spacing: 0.8px;
+    }
+    .sidebar-menu { list-style: none; margin-bottom: 16px; }
+    .sidebar-menu li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .sidebar-menu li a:hover,
+    .sidebar-menu li.active a {
+      background: #e2e8f0;
+      color: var(--primary);
+      text-decoration: none;
+      border-left-color: var(--primary);
+    }
+
+    .sidebar-telemetry-box {
+      margin: 14px 16px;
+      padding: 14px;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    .sidebar-telemetry-box h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .sidebar-telemetry-val {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    /* MAIN CONTENT */
+    #content-main {
+      flex: 1;
+      margin-left: 260px;
+      min-width: 0;
+      padding: 24px 32px;
+      width: calc(100% - 260px);
+      box-sizing: border-box;
+      transition: margin-left 0.25s ease, width 0.25s ease;
+    }
+    body.sidebar-is-collapsed #content-main {
+      margin-left: 0;
+      width: 100%;
+    }
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .content-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    /* TOAST */
+    .django-toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 4px;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: none;
+    }
+    .django-toast.success { background: #15803d; }
+    .django-toast.error { background: #b91c1c; }
+
+    /* BACKDROP FOR MOBILE DRAWER */
+    #sidebar-backdrop {
+      display: none;
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 1040;
+      backdrop-filter: blur(2px);
+    }
+    body.sidebar-mobile-open #sidebar-backdrop {
+      display: block;
+      pointer-events: auto;
+    }
+
+    /* RESPONSIVE MEDIA QUERIES (MOBILE <= 768px) */
+    @media (max-width: 768px) {
+      #header {
+        padding: 0 12px;
+      }
+      #branding {
+        gap: 8px;
+      }
+      .nav-logo-wrap {
+        height: 28px;
+        padding: 2px 8px;
+      }
+      .nav-logo-img {
+        height: 20px;
+      }
+      .nav-title-text {
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+      }
+      #user-tools {
+        display: none !important;
+      }
+      .dots-btn {
+        display: flex !important;
+      }
+
+      .breadcrumbs {
+        padding: 0 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+      .breadcrumbs::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Mobile Drawer Navigation */
+      #nav-sidebar {
+        top: 52px;
+        height: calc(100vh - 52px);
+        width: 280px;
+        z-index: 1050;
+        background: #ffffff;
+        box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      body.sidebar-mobile-open #nav-sidebar {
+        transform: translateX(0);
+      }
+
+      /* Content Area 100% on Mobile */
+      #content-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 16px 12px;
+      }
+      body.sidebar-is-collapsed #content-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+
+      .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .content-header h1 {
+        font-size: 18px;
+      }
+    }
+
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- MOBILE SIDEBAR BACKDROP -->
+  <div id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
+  <!-- TOP BAR -->
+  <header id="header">
+    <div id="branding">
+      <button type="button" id="sidebar-toggle-btn" class="burger-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar" title="Toggle Sidebar Navigation">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <a href="/" class="brand-link" title="Walvoil Quality Control System">
+        <div class="nav-logo-wrap">
+          <img src="{{ url_for('static', filename='logo.png') }}" alt="Walvoil" class="nav-logo-img">
+        </div>
+        <span class="nav-title-text">Viscosity Administration</span>
+      </a>
+    </div>
+    
+    <!-- DESKTOP USER TOOLS -->
+    <div id="user-tools">
+      Operator: <strong id="nav-operator-name" style="cursor: pointer; text-decoration: underline; text-underline-offset: 3px;" title="Click to change operator" onclick="promptChangeOperator()">Operator</strong>
+      <span>/</span>
+      <span class="sys-time-badge" id="clock-display">--:--:--</span>
+      <span>/</span>
+      <span class="shift-live-pill">
+        <span class="shift-indicator-dot"></span>
+        <span id="nav-shift-name">Shift: Calculating...</span>
+      </span>
+      <span>/</span>
+      <span class="devices-live-pill" id="devices-live-pill" title="Connected devices across network">
+        <span class="devices-indicator-dot"></span>
+        <span id="devices-count-txt">1 Device Online</span>
+      </span>
+      <span>/</span>
+      <a href="/reports">Reports Archive</a>
+    </div>
+
+    <!-- MOBILE THREE-DOTS MENU BUTTON -->
+    <button type="button" id="mobile-dots-btn" class="dots-btn" onclick="toggleMobileUserMenu(event)" aria-label="Open User Tools Menu" title="Operator & System Menu">
+      <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+        <circle cx="12" cy="5" r="2.2"/>
+        <circle cx="12" cy="12" r="2.2"/>
+        <circle cx="12" cy="19" r="2.2"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- MOBILE USER DROPDOWN (TOGGLED BY THREE DOTS) -->
+  <div id="mobile-user-dropdown" class="mobile-user-dropdown">
+    <div class="m-user-section-title">Active Operator</div>
+    <div class="m-user-row" style="justify-content: space-between; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px;">👤</span>
+        <strong id="m-nav-operator-name" style="font-size: 14px; color: #0f172a;">Operator</strong>
+      </div>
+      <button type="button" onclick="promptChangeOperator()" class="m-user-btn-switch">Switch</button>
+    </div>
+
+    <div class="m-user-section-title">Live System Time</div>
+    <div class="m-user-row" style="margin-bottom: 10px;">
+      <span style="font-size: 14px;">🕒</span>
+      <span class="m-clock-val" id="m-clock-display">--:--:--</span>
+    </div>
+
+    <div class="m-user-section-title">Operational Shift</div>
+    <div class="m-user-row" style="margin-bottom: 10px;">
+      <span class="shift-live-pill" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; width: 100%;">
+        <span class="shift-indicator-dot" style="background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
+        <span id="m-nav-shift-name">Shift: Calculating...</span>
+      </span>
+    </div>
+
+    <div class="m-user-section-title">Connected Devices</div>
+    <div class="m-user-row" style="margin-bottom: 12px;">
+      <span class="devices-live-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; width: 100%;">
+        <span class="devices-indicator-dot" style="background: #16a34a; box-shadow: 0 0 6px #16a34a;"></span>
+        <span id="m-devices-count-txt">1 Device Online</span>
+      </span>
+    </div>
+
+    <div style="border-top: 1px solid #e2e8f0; margin: 10px 0 8px 0;"></div>
+
+    <div class="m-user-section-title">Quick Navigation</div>
+    <a href="/reports" class="m-user-link">
+      📁 Archived Reports (Excel / PDF)
+    </a>
+    <a href="/" class="m-user-link">
+      🧪 Viscosity Testing Form
+    </a>
+    <a href="/benefits" class="m-user-link">
+      📖 Industrial Benefits & Specs
+    </a>
+    <a href="/ping_status" target="_blank" class="m-user-link">
+      🔍 Diagnostic API
+    </a>
+  </div>
+
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    {% block breadcrumbs %}
+      <a href="/">Home</a>
+    {% endblock %}
+  </nav>
+
+  <!-- LAYOUT WITH SIDEBAR -->
+  <div id="main-layout">
+
+    <!-- SIDEBAR -->
+    <aside id="nav-sidebar">
+      <!-- OPERATOR & SHIFT STATUS CARD AT TOP OF SIDEBAR -->
+      <div class="sidebar-user-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.6px;">Active Operator</span>
+          <button type="button" onclick="promptChangeOperator()" style="background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 11px; padding: 2px 7px; border-radius: 3px; cursor: pointer; color: #1e293b; font-weight: 600;">Switch</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span style="font-size: 14px;">👤</span>
+          <strong id="side-operator-name" style="font-size: 13px; color: #0f172a;">Operator</strong>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #475569; margin-bottom: 6px;">
+          <span>🕒</span>
+          <span style="font-family: 'Roboto Mono', monospace; font-weight: 600;" id="side-clock-display">--:--:--</span>
+        </div>
+        <div class="shift-live-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 10px; padding: 3px 8px; width: 100%; justify-content: flex-start;">
+          <span class="shift-indicator-dot" style="background: #22c55e; box-shadow: 0 0 5px #22c55e;"></span>
+          <span id="side-shift-name">Calculating Shift...</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: #475569; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">
+          <span class="devices-indicator-dot" style="background: #0ea5e9; box-shadow: 0 0 5px #0ea5e9;"></span>
+          <span id="side-devices-count-txt">1 Device Online</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section-title">IoT Telemetry</div>
+      <div class="sidebar-telemetry-box">
+        <h4>Station Live Reading</h4>
+        <div class="sidebar-telemetry-val">
+          <span id="side-live-val">0.00</span> <span style="font-size: 14px; font-weight: normal; color: #64748b;">cSt</span>
+        </div>
+        <div style="font-size: 11px; color: #64748b;">
+          Status: <strong id="side-status-txt" style="color: #ba2121;">OFFLINE</strong>
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+          IP: <span id="side-ip-txt">Auto-Detecting...</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section-title">Testing Workbench</div>
+      <ul class="sidebar-menu">
+        <li class="{% block nav_test_active %}{% endblock %}">
+          <a href="/">🧪 Viscosity Testing Form</a>
+        </li>
+      </ul>
+
+      <div class="sidebar-section-title">Quality & Traceability</div>
+      <ul class="sidebar-menu">
+        <li class="{% block nav_reports_active %}{% endblock %}">
+          <a href="/reports">📁 Archived Reports (Excel/PDF)</a>
+        </li>
+        <li class="{% block nav_benefits_active %}{% endblock %}">
+          <a href="/benefits">📖 Industrial Benefits & Specs</a>
+        </li>
+        <li>
+          <a href="/ping_status" target="_blank">🔍 Diagnostic API</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN PAGE CONTENT -->
+    <main id="content-main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <div id="toast" class="django-toast"></div>
+
+  <script>
+    // Mobile Three-Dots User Menu Toggle
+    function toggleMobileUserMenu(e) {
+      if (e) e.stopPropagation();
+      const dropdown = document.getElementById('mobile-user-dropdown');
+      if (dropdown) dropdown.classList.toggle('open');
+    }
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('mobile-user-dropdown');
+      const dotsBtn = document.getElementById('mobile-dots-btn');
+      if (dropdown && dropdown.classList.contains('open')) {
+        if (!dropdown.contains(e.target) && !dotsBtn.contains(e.target)) {
+          dropdown.classList.remove('open');
+        }
+      }
+    });
+
+    // Live Clock & Active Shift Detection
+    function getActiveShift() {
+      const now = new Date();
+      const hour = now.getHours();
+      if (hour >= 6 && hour < 14) {
+        return { name: "Shift A", timeRange: "06:00 – 14:00" };
+      } else if (hour >= 14 && hour < 22) {
+        return { name: "Shift B", timeRange: "14:00 – 22:00" };
+      } else {
+        return { name: "Shift C", timeRange: "22:00 – 06:00" };
+      }
+    }
+
+    function updateClockAndShift() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString();
+
+      const clockElem = document.getElementById('clock-display');
+      if (clockElem) clockElem.innerText = timeStr;
+      const mClockElem = document.getElementById('m-clock-display');
+      if (mClockElem) mClockElem.innerText = timeStr;
+      const sideClockElem = document.getElementById('side-clock-display');
+      if (sideClockElem) sideClockElem.innerText = timeStr;
+
+      const shift = getActiveShift();
+      const shiftText = `${shift.name} Running (${shift.timeRange})`;
+
+      const navShift = document.getElementById('nav-shift-name');
+      if (navShift) navShift.innerText = shiftText;
+      const mNavShift = document.getElementById('m-nav-shift-name');
+      if (mNavShift) mNavShift.innerText = shiftText;
+      const sideShift = document.getElementById('side-shift-name');
+      if (sideShift) sideShift.innerText = shiftText;
+
+      const formShift = document.getElementById('shift');
+      if (formShift) {
+        if (!formShift._listenerAttached) {
+          formShift._listenerAttached = true;
+          formShift.addEventListener('input', () => {
+            formShift.dataset.userEdited = 'true';
+          });
+        }
+        if (!formShift.dataset.userEdited) {
+          formShift.value = shift.name;
+        }
+      }
+    }
+    setInterval(updateClockAndShift, 1000);
+    updateClockAndShift();
+
+    // Dynamic Operator Sync
+    function syncOperator() {
+      const savedOp = localStorage.getItem('walvoil_operator') || 'Operator';
+      const navOpElem = document.getElementById('nav-operator-name');
+      if (navOpElem) navOpElem.innerText = savedOp;
+      const mNavOpElem = document.getElementById('m-nav-operator-name');
+      if (mNavOpElem) mNavOpElem.innerText = savedOp;
+      const sideOpElem = document.getElementById('side-operator-name');
+      if (sideOpElem) sideOpElem.innerText = savedOp;
+
+      const formOpElem = document.getElementById('operator_id');
+      if (formOpElem && !formOpElem.dataset.userEdited && savedOp !== 'Operator') {
+        formOpElem.value = savedOp;
+      }
+    }
+
+    // Multi-Device Presence Client Registration
+    let myClientId = sessionStorage.getItem('walvoil_client_id');
+    if (!myClientId) {
+      myClientId = 'cli_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      sessionStorage.setItem('walvoil_client_id', myClientId);
+    }
+    const isMobileDevice = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const myDeviceType = isMobileDevice ? 'Mobile' : 'PC';
+
+    function promptChangeOperator() {
+      const current = localStorage.getItem('walvoil_operator') || '';
+      const input = prompt('Enter Operator ID / Name:', current);
+      if (input !== null && input.trim() !== '') {
+        const val = input.trim();
+        localStorage.setItem('walvoil_operator', val);
+        const navOpElem = document.getElementById('nav-operator-name');
+        if (navOpElem) navOpElem.innerText = val;
+        const mNavOpElem = document.getElementById('m-nav-operator-name');
+        if (mNavOpElem) mNavOpElem.innerText = val;
+        const sideOpElem = document.getElementById('side-operator-name');
+        if (sideOpElem) sideOpElem.innerText = val;
+
+        const formOpElem = document.getElementById('operator_id');
+        if (formOpElem) formOpElem.value = val;
+
+        // Broadcast to other connected devices
+        fetch('/api/session/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cid: myClientId, dev: myDeviceType, operator: val })
+        }).catch(() => {});
+
+        showToast(`Active Operator set to: ${val}`, 'success');
+      }
+    }
+
+    syncOperator();
+
+    // Toggle Sidebar Function (Dual Desktop & Mobile Drawer)
+    function toggleSidebar() {
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        document.body.classList.toggle('sidebar-mobile-open');
+      } else {
+        const sidebar = document.getElementById('nav-sidebar');
+        if (!sidebar) return;
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+        if (isCollapsed) {
+          document.body.classList.add('sidebar-is-collapsed');
+        } else {
+          document.body.classList.remove('sidebar-is-collapsed');
+        }
+        localStorage.setItem('walvoil_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+      }
+    }
+
+    function closeMobileSidebar() {
+      document.body.classList.remove('sidebar-mobile-open');
+    }
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        document.body.classList.remove('sidebar-mobile-open');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // On mobile, keep sidebar collapsed initially
+      if (window.innerWidth > 768 && localStorage.getItem('walvoil_sidebar_collapsed') === 'true') {
+        const sidebar = document.getElementById('nav-sidebar');
+        if (sidebar) sidebar.classList.add('collapsed');
+        document.body.classList.add('sidebar-is-collapsed');
+      }
+    });
+
+    // Telemetry & Multi-Device Polling
+    let currentLiveViscosity = "0.00";
+
+    async function pollLiveTelemetry() {
+      try {
+        const url = `/data?cid=${encodeURIComponent(myClientId)}&dev=${encodeURIComponent(myDeviceType)}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const station = data.station || (data["Walvoil Viscosity Testing Station"] || Object.values(data)[0] || {});
+
+        // 1. Update Live Telemetry
+        if (station && station.val !== undefined) {
+          currentLiveViscosity = station.val;
+          const sideLive = document.getElementById('side-live-val');
+          if (sideLive) sideLive.innerText = station.val;
+          
+          const sideIp = document.getElementById('side-ip-txt');
+          if (sideIp) sideIp.innerText = station.sender_ip || 'Auto-Detecting...';
+
+          const isOnline = station.online;
+          const sideStatus = document.getElementById('side-status-txt');
+          if (sideStatus) {
+            sideStatus.innerText = isOnline ? 'ONLINE' : 'OFFLINE';
+            sideStatus.style.color = isOnline ? '#15803d' : '#ba2121';
+          }
+
+          // Trigger page-specific telemetry hook if defined
+          if (typeof onTelemetryUpdate === 'function') {
+            onTelemetryUpdate(station, isOnline, data.session);
+          }
+        }
+
+        // 2. Update Connected Devices Count Badge
+        const count = data.clients_count || 1;
+        const devs = data.clients_devices || [myDeviceType];
+        let devLabel = `${count} Device${count > 1 ? 's' : ''} Online`;
+        if (count > 1) {
+          const uniqueDevs = [...new Set(devs)];
+          devLabel = `${count} Online (${uniqueDevs.join(' & ')})`;
+        }
+        const dTxt = document.getElementById('devices-count-txt');
+        if (dTxt) dTxt.innerText = devLabel;
+        const mdTxt = document.getElementById('m-devices-count-txt');
+        if (mdTxt) mdTxt.innerText = devLabel;
+        const sdTxt = document.getElementById('side-devices-count-txt');
+        if (sdTxt) sdTxt.innerText = devLabel;
+
+        // 3. Synchronize Active Operator from Shared Session
+        if (data.operator && data.operator !== 'Operator') {
+          const navOpElem = document.getElementById('nav-operator-name');
+          if (navOpElem) navOpElem.innerText = data.operator;
+          const mNavOpElem = document.getElementById('m-nav-operator-name');
+          if (mNavOpElem) mNavOpElem.innerText = data.operator;
+          const sideOpElem = document.getElementById('side-operator-name');
+          if (sideOpElem) sideOpElem.innerText = data.operator;
+          localStorage.setItem('walvoil_operator', data.operator);
+
+          const formOpElem = document.getElementById('operator_id');
+          if (formOpElem && formOpElem !== document.activeElement && formOpElem.value !== data.operator) {
+            formOpElem.value = data.operator;
+          }
+        }
+
+      } catch (err) {
+        console.warn('Telemetry poll error:', err);
+      }
+    }
+    setInterval(pollLiveTelemetry, 1500);
+    pollLiveTelemetry();
+
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.innerText = msg;
+      t.className = `django-toast ${type}`;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 4000);
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

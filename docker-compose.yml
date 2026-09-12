@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  walvoil-viscosity:
+    build: .
+    container_name: walvoil_viscosity_app
+    restart: unless-stopped
+    ports:
+      - "5001:5001/tcp"       # Web Dashboard & API
+      - "63363:63363/udp"     # IoT Viscometer UDP Telemetry
+    volumes:
+      - ./Reports:/app/Reports                   # Persist generated Excel & PDF reports on host
+      - ./device_data.db:/app/device_data.db     # Persist SQLite audit database on host
+    environment:
+      - TZ=Asia/Kolkata       # Adjust timezone as required

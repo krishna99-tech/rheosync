@@ -1,0 +1,50 @@
+# ==============================================================================
+# WALVOIL — IoT VISCOSITY MEASUREMENT & REPORTING SYSTEM
+# .gitignore
+# ==============================================================================
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Generated Runtime Test Reports (Excel & PDF archives)
+Reports/
+
+# Local SQLite Database & Audit Logs (Runtime data)
+*.db
+*.sqlite3
+
+# Temporary, Backup & Test Files
+*.bak
+*.tmp
+test_*.xlsx
+test_*.pdf
+*.log
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# IDE & Editor Configuration
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System Metadata
+.DS_Store
+Thumbs.db
+desktop.ini
