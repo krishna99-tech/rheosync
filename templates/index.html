@@ -705,6 +705,7 @@
     });
   });
 
+  let isInitialLoad = true;
   // Hook telemetry updates and incoming session sync to page
   function onTelemetryUpdate(station, isOnline, session) {
     const banner = document.getElementById('telemetry-banner');
@@ -729,7 +730,7 @@
     }
 
     // Live Cross-Device Form Mirroring
-    if (session && session.updated_by && session.updated_by !== myClientId && session.form_data) {
+    if (session && session.form_data && (isInitialLoad || (session.updated_by && session.updated_by !== myClientId))) {
       const fd = session.form_data;
       if (fd.process_type && fd.process_type !== document.getElementById('process_type').value) {
         selectTemplate(fd.process_type, false);
@@ -745,6 +746,7 @@
           }
         }
       }
+      isInitialLoad = false;
     }
   }
 

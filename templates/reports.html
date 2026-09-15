@@ -221,6 +221,80 @@
     background: #15803d !important;
   }
 
+  .date-export-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    border-left: 1px solid #e2e8f0;
+    padding-left: 12px;
+    margin-left: 8px;
+  }
+  .date-export-group input[type="date"] {
+    padding: 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #475569;
+  }
+  .date-separator {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+  }
+  .btn-download-all {
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-left: 4px;
+    transition: all 0.2s;
+  }
+  .btn-download-all:hover {
+    background: #2563eb;
+  }
+
+  table.result_list td, table.result_list th {
+    white-space: nowrap;
+  }
+
+  .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    background: #fff;
+    border-top: 1px solid var(--border-color);
+    gap: 16px;
+  }
+  .btn-page {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-page:hover:not(:disabled) {
+    background: #e2e8f0;
+  }
+  .btn-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .page-info {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+  }
+
   /* RESPONSIVE MEDIA QUERIES FOR MOBILE (<= 768px) */
   @media (max-width: 768px) {
     .content-header {
@@ -260,6 +334,22 @@
       white-space: nowrap;
       padding-bottom: 4px;
       -webkit-overflow-scrolling: touch;
+    }
+    .date-export-group {
+      flex-direction: column;
+      align-items: stretch;
+      border-left: none;
+      padding-left: 0;
+      margin-left: 0;
+      gap: 8px;
+    }
+    .date-separator {
+      text-align: center;
+    }
+    .btn-download-all {
+      margin-left: 0;
+      padding: 10px;
+      margin-top: 4px;
     }
     .path-note-box {
       flex-direction: column;
@@ -324,10 +414,16 @@
     </div>
     <div class="filter-pills-bar">
       <button type="button" class="filter-pill-btn active" id="pill-all" onclick="setProcessFilter('all')">All Processes</button>
-      <button type="button" class="filter-pill-btn" id="pill-primer" onclick="setProcessFilter('primer')">🎨 Primer Only</button>
-      <button type="button" class="filter-pill-btn" id="pill-paint" onclick="setProcessFilter('paint')">🖌️ Paint Coat Only</button>
-      <button type="button" class="filter-pill-btn" id="pill-pass" onclick="setStatusFilter('pass')">✓ Pass Only</button>
-      <button type="button" class="filter-pill-btn" id="pill-fail" onclick="setStatusFilter('fail')">✕ Fail Only</button>
+      <button type="button" class="filter-pill-btn" id="pill-primer" onclick="setProcessFilter('primer')">🎨 Primer</button>
+      <button type="button" class="filter-pill-btn" id="pill-paint" onclick="setProcessFilter('paint')">🖌️ Paint</button>
+      <button type="button" class="filter-pill-btn" id="pill-pass" onclick="setStatusFilter('pass')">✓ Pass</button>
+      <button type="button" class="filter-pill-btn" id="pill-fail" onclick="setStatusFilter('fail')">✕ Fail</button>
+    </div>
+    <div class="date-export-group">
+      <input type="date" id="date-from" title="From Date">
+      <span class="date-separator">TO</span>
+      <input type="date" id="date-to" title="To Date">
+      <button type="button" onclick="downloadDateRangeArchive(this)" class="btn-download-all" title="Export all Excel and PDF files as ZIP">📥 Download All (ZIP)</button>
     </div>
   </div>
 
@@ -354,14 +450,24 @@
         </tr>
       </tbody>
     </table>
+    
+    <!-- PAGINATION CONTROLS -->
+    <div class="pagination-controls" id="pagination-controls" style="display: none;">
+      <button type="button" id="btn-prev-page" onclick="changePage(-1)" class="btn-page">❮ Prev</button>
+      <span class="page-info" id="page-info">Page 1 of 1</span>
+      <button type="button" id="btn-next-page" onclick="changePage(1)" class="btn-page">Next ❯</button>
+    </div>
   </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
   let allReportsCache = [];
+  let currentFiltered = [];
   let currentProcessFilter = 'all';
   let currentStatusFilter = 'all';
+  let currentPage = 1;
+  const rowsPerPage = 10;
 
   async function loadAllReports() {
     try {
@@ -428,31 +534,44 @@
   function applyFilters() {
     const searchInput = document.getElementById('filter-search-input');
     const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const tbody = document.getElementById('reports-table-body');
-    if (!tbody) return;
 
-    let filtered = (allReportsCache || []).filter(r => {
+    currentFiltered = (allReportsCache || []).filter(r => {
       const proc = (r.process_type || '').toLowerCase();
       const res = (r.result || '').toLowerCase().trim();
 
-      // Process filter
-      const isPrimer = proc.includes('primer');
-      if (currentProcessFilter === 'primer' && !isPrimer) return false;
-      if (currentProcessFilter === 'paint' && isPrimer) return false;
-
-      // Status filter
-      if (currentStatusFilter === 'pass' && res !== 'pass') return false;
-      if (currentStatusFilter === 'fail' && res !== 'fail') return false;
-
-      // Search query
+      if (currentProcessFilter !== 'all') {
+        if (currentProcessFilter === 'primer' && !proc.includes('primer')) return false;
+        if (currentProcessFilter === 'paint' && !proc.includes('paint')) return false;
+      }
+      if (currentStatusFilter !== 'all') {
+        if (currentStatusFilter === 'pass' && res !== 'pass') return false;
+        if (currentStatusFilter === 'fail' && res !== 'fail') return false;
+      }
       if (search) {
-        const textBlob = `${r.part_number || ''} ${r.part_a_batch || ''} ${r.part_b_batch || ''} ${r.operator_id || ''} ${r.created_at || ''}`.toLowerCase();
-        if (!textBlob.includes(search)) return false;
+        const pNum = (r.part_number || '').toLowerCase();
+        const bA = (r.part_a_batch || '').toLowerCase();
+        const bB = (r.part_b_batch || '').toLowerCase();
+        const op = (r.operator_id || '').toLowerCase();
+        if (!pNum.includes(search) && !bA.includes(search) && !bB.includes(search) && !op.includes(search)) return false;
       }
       return true;
     });
 
-    if (filtered.length === 0) {
+    currentPage = 1;
+    renderTable();
+  }
+
+  function changePage(delta) {
+    currentPage += delta;
+    renderTable();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('reports-table-body');
+    if (!tbody) return;
+
+    if (currentFiltered.length === 0) {
+      document.getElementById('pagination-controls').style.display = 'none';
       if ((allReportsCache || []).length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 36px 24px; color: #64748b;">
           <div style="font-size: 28px; margin-bottom: 8px;">📂</div>
@@ -468,7 +587,14 @@
       return;
     }
 
-    tbody.innerHTML = filtered.map(r => {
+    const totalPages = Math.ceil(currentFiltered.length / rowsPerPage) || 1;
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const paginatedItems = currentFiltered.slice(startIndex, startIndex + rowsPerPage);
+
+    tbody.innerHTML = paginatedItems.map(r => {
       const proc = (r.process_type || '').toLowerCase();
       const isPrimer = proc.includes('primer');
       const procClass = isPrimer ? 'primer' : 'paint';
@@ -500,6 +626,73 @@
         </tr>
       `;
     }).join('');
+
+    // Update pagination UI
+    document.getElementById('pagination-controls').style.display = 'flex';
+    document.getElementById('page-info').innerText = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById('btn-prev-page').disabled = currentPage === 1;
+    document.getElementById('btn-next-page').disabled = currentPage === totalPages;
+  }
+
+  async function downloadDateRangeArchive(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Zipping...';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+
+    const fromDate = document.getElementById('date-from').value;
+    const toDate = document.getElementById('date-to').value;
+    const search = (document.getElementById('filter-search-input').value || '').trim();
+    
+    let url = '/api/download_reports_archive?';
+    const params = new URLSearchParams();
+    
+    if (fromDate && toDate) {
+      if (new Date(fromDate) > new Date(toDate)) {
+        alert('Invalid Date Range: "From Date" cannot be after "To Date".');
+        btn.innerHTML = originalText; btn.disabled = false; btn.style.opacity = '1';
+        return;
+      }
+      params.append('start', fromDate);
+      params.append('end', toDate);
+    } else if (fromDate || toDate) {
+      alert('Please select both "From" and "To" dates, or clear both to download all.');
+      btn.innerHTML = originalText; btn.disabled = false; btn.style.opacity = '1';
+      return;
+    }
+    
+    if (currentProcessFilter !== 'all') params.append('process', currentProcessFilter);
+    if (currentStatusFilter !== 'all') params.append('status', currentStatusFilter);
+    if (search) params.append('search', search);
+    
+    url += params.toString();
+    const filename = (fromDate && toDate) ? `Archived_Reports_${fromDate}_to_${toDate}.zip` : 'Archived_Reports_All.zip';
+    
+    showToast('Compressing Excel & PDF files into ZIP, please wait...', 'success');
+    
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      
+      await new Promise(r => setTimeout(r, 800));
+      
+      const objUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(objUrl);
+      showToast('ZIP Archive Download Successful!', 'success');
+    } catch(err) {
+      showToast('Error downloading Archive ZIP', 'error');
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
   }
 
   loadAllReports();

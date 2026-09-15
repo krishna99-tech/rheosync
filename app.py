@@ -678,6 +678,68 @@ def download_csv():
     mem.seek(0)
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name="Viscosity_Live_Log.csv")
 
+
+
+@app.route('/api/download_reports_archive')
+def download_reports_archive():
+    import zipfile
+    start_date = request.args.get("start", "")
+    end_date = request.args.get("end", "")
+    process_filter = request.args.get("process", "all")
+    status_filter = request.args.get("status", "all")
+    search_query = request.args.get("search", "")
+    
+    conn = sqlite3.connect(DB_PATH)
+    query = "SELECT pdf_path, excel_path, part_number, created_at FROM test_reports WHERE 1=1"
+    params = []
+    
+    if start_date and end_date:
+        query += " AND date(created_at) BETWEEN ? AND ?"
+        params.extend([start_date, end_date])
+        
+    if process_filter == 'primer':
+        query += " AND process_type LIKE '%Primer%'"
+    elif process_filter == 'paint':
+        query += " AND process_type LIKE '%Paint%'"
+        
+    if status_filter == 'pass':
+        query += " AND LOWER(TRIM(result)) = 'pass'"
+    elif status_filter == 'fail':
+        query += " AND LOWER(TRIM(result)) = 'fail'"
+        
+    if search_query:
+        query += " AND (part_number LIKE ? OR part_a_batch LIKE ? OR part_b_batch LIKE ? OR operator_id LIKE ?)"
+        lk = f"%{search_query}%"
+        params.extend([lk, lk, lk, lk])
+    
+    rows = conn.cursor().execute(query, params).fetchall()
+    conn.close()
+
+    mem = io.BytesIO()
+    seen_paths = set()
+    
+    with zipfile.ZipFile(mem, 'w', zipfile.ZIP_STORED) as zf:
+        for pdf_path, excel_path, part_num, created_at in rows:
+            for file_path in [pdf_path, excel_path]:
+                if file_path and os.path.exists(file_path):
+                    # Preserve the exact folder hierarchy starting from 'Reports'
+                    try:
+                        arcname = os.path.relpath(file_path, BASE_DIR)
+                    except ValueError:
+                        arcname = os.path.basename(file_path)
+                    
+                    # Normalize Windows slashes to standard zip slashes
+                    arcname = arcname.replace('\\', '/')
+                    
+                    # Only add the file if we haven't already added it to the zip
+                    if arcname not in seen_paths:
+                        zf.write(file_path, arcname)
+                        seen_paths.add(arcname)
+
+    mem.seek(0)
+    filename = f"Archived_Reports_{start_date}_to_{end_date}.zip" if start_date and end_date else "Archived_Reports_All.zip"
+    return send_file(mem, mimetype="application/zip", as_attachment=True, download_name=filename)
+
 # Automatically start background UDP receiver & watchdog when imported by WSGI (e.g. Gunicorn)
 if not getattr(app, '_services_started', False) and os.environ.get("WERKZEUG_RUN_MAIN") is None and __name__ != '__main__':
     start_background_services()
