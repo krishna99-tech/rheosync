@@ -199,12 +199,19 @@ def register_client(cid: str, ip: str, device: str):
 # ================================================================
 # PACKET DECODING
 # ================================================================
-def extract_value(raw_bytes: bytes) -> str:
-    clean = raw_bytes.decode('ascii', errors='ignore')
+def extract_value(raw_bytes: bytes) -> tuple:
+    clean = raw_bytes.decode('ascii', errors='ignore').strip()
+    device_id = "Unknown"
+    
+    # If the payload is in "DEVICE_ID,VALUE" format (e.g., "120,2.68"), grab the value after the comma
+    if ',' in clean:
+        parts = clean.split(',')
+        device_id = parts[0].strip()
+        clean = parts[-1].strip()
+        
     m = re.search(r'\d+\.?\d*', clean)
-    if m:
-        return m.group()
-    return clean.replace('\x00', '').strip()
+    val = m.group() if m else clean.replace('\x00', '').strip()
+    return device_id, val
 
 # ================================================================
 # UDP LISTENER THREAD (Auto-detects any incoming sender IP)
@@ -225,18 +232,23 @@ def _udp_loop():
             data, addr = sock.recvfrom(1024)
             sender_ip  = addr[0]
             src_port   = addr[1]
+            
+            # --- DEBUG PRINT FOR UNDERSTANDING ---
+            print(f"[UDP DATA IN] Received from {sender_ip}:{src_port} -> Raw: {data} | Decoded: {data.decode('ascii', errors='ignore')}")
 
-            value = extract_value(data)
+            device_id, value = extract_value(data)
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            device_name = f"Device {device_id}" if device_id != "Unknown" else STATION_NAME
 
             with data_lock:
+                station_data["name"]      = device_name
                 station_data["val"]       = value
                 station_data["time"]      = current_time
                 station_data["sender_ip"] = sender_ip
                 station_data["last_seen"] = time.time()
                 station_data["online"]    = True
 
-            save_to_db(STATION_NAME, sender_ip, value, current_time)
+            save_to_db(device_name, sender_ip, value, current_time)
 
         except socket.timeout:
             continue
@@ -674,8 +686,9 @@ if not getattr(app, '_services_started', False) and os.environ.get("WERKZEUG_RUN
 # ENTRY POINT
 # ================================================================
 if __name__ == '__main__':
-    # Start background UDP receiver & watchdog in active worker
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+    # Start background UDP receiver ONLY in the active Flask worker process,
+    # never in the reloader parent process, otherwise the parent steals the UDP packets!
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         start_background_services()
 
     app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=True)
