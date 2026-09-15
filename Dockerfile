@@ -39,5 +39,5 @@ RUN mkdir -p /app/Reports
 EXPOSE 5001/tcp
 EXPOSE 63363/udp
 
-# Run with Gunicorn (1 worker required so single UDP listener binds cleanly)
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:5001", "app:app"]
+# Run with Gunicorn (1 worker + 4 threads per worker = 5 parallel request handlers)
+CMD ["gunicorn", "-w", "1", "--threads", "4", "-b", "0.0.0.0:5001", "app:app"]
