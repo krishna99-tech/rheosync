@@ -12,7 +12,7 @@ char SERVER_IP[40] = "192.168.0.159";  // CentOS / server IP address
 char UDP_PORT_STR[6] = "63363";
 int UDP_PORT  = 63363;
 const int DEVICE_ID = 120;                  // This device's identifier
-const int LED_PIN   = 13;
+const int LED_PIN   = 18; // set based on the gateway
 WiFiUDP udp;
 
 // === MAX485 Pins ===
@@ -23,8 +23,8 @@ WiFiUDP udp;
 HardwareSerial modbusSerial(2); 
 ModbusRTU modbus;
 
-const uint8_t  SLAVE_ID    = 2; // change this to your Modbus slave ID of jumbo display
-const uint16_t REG_ADDRESS = 0; 
+const uint8_t  SLAVE_ID    = 1; //set  slave id as per your jumbo display
+const uint16_t REG_ADDRESS = 1; //set  register address as per your jumbo display
 
 // === IR Sensor (Digital) ===
 const int irSensorDigitalPin = 27;
@@ -57,12 +57,22 @@ const char* wifiStatusToStr(wl_status_t st) {
   }
 }
 
+// === Convert float to 2 Modbus registers ===
+void floatToModbusRegisters(float value, uint16_t *registers) {
+  uint8_t bytes[4];
+  memcpy(bytes, &value, sizeof(float));
+
+  registers[0] = (bytes[1] << 8) | bytes[0];
+  registers[1] = (bytes[3] << 8) | bytes[2];
+}
+
 bool writeDisplayValue(float value) {
-  uint16_t modbusValue = (uint16_t)(value * 100);
+  uint16_t registers[2];
+  floatToModbusRegisters(value, registers);
 
   digitalWrite(MAX485_RE, HIGH);
   digitalWrite(MAX485_DE, HIGH);
-  bool result = modbus.writeHreg(SLAVE_ID, REG_ADDRESS, modbusValue);
+  bool result = modbus.writeHreg(SLAVE_ID, REG_ADDRESS, registers, 2);
   digitalWrite(MAX485_RE, LOW);
   digitalWrite(MAX485_DE, LOW);
 
@@ -78,6 +88,17 @@ void checkWiFiAndUDP() {
   } else if (WiFi.status() != WL_CONNECTED && udpStarted) {
     udpStarted = false; // Reset if we lose connection
   }
+}
+
+void sendHeartbeatUDP() {
+  if (WiFi.status() != WL_CONNECTED || !udpStarted) return;
+  
+  char message[16];
+  snprintf(message, sizeof(message), "%d,PING", DEVICE_ID);
+
+  udp.beginPacket(SERVER_IP, UDP_PORT);
+  udp.write((uint8_t*)message, strlen(message));
+  udp.endPacket();
 }
 
 void sendUDP(float value) {
@@ -148,8 +169,8 @@ void setup() {
   // Load saved custom parameters
   Preferences preferences;
   preferences.begin("config", true); // true = Read Only
-  String savedIP = preferences.getString("server_ip", "192.168.1.159");
-  String savedPort = preferences.getString("udp_port", "8505");
+  String savedIP = preferences.getString("server_ip", "192.168.0.159");
+  String savedPort = preferences.getString("udp_port", "63363");
   savedIP.toCharArray(SERVER_IP, 40);
   savedPort.toCharArray(UDP_PORT_STR, 6);
   UDP_PORT = savedPort.toInt();
@@ -165,7 +186,7 @@ void setup() {
   digitalWrite(MAX485_RE, LOW);
   digitalWrite(MAX485_DE, LOW);
 
-  modbusSerial.begin(19200, SERIAL_8N1, 32, 33); // Change this Baud rate to match your Modbus device
+  modbusSerial.begin(9600, SERIAL_8N1, 32, 33); // Change this Baud rate to match your Modbus device
   modbus.begin(&modbusSerial, MAX485_RE);
   modbus.master();
   modbus.task();
@@ -209,7 +230,8 @@ void loop() {
   // Heartbeat - Only shows WiFi status if we have tried to connect
   if (now - lastHeartbeat >= heartbeatInterval) {
     lastHeartbeat = now;
-    Serial.println("\n--- HEARTBEAT ---");
+    sendHeartbeatUDP();
+    Serial.println("\n--- HEARTBEAT (UDP PING SENT) ---");
     Serial.print("WiFi: "); Serial.println(wifiStatusToStr(WiFi.status()));
     Serial.print("Flowing: "); Serial.println(waterFlowing ? "YES" : "NO");
     Serial.print("Sent: "); Serial.println(sent ? "YES" : "NO");

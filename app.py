@@ -236,19 +236,34 @@ def _udp_loop():
             # --- DEBUG PRINT FOR UNDERSTANDING ---
             print(f"[UDP DATA IN] Received from {sender_ip}:{src_port} -> Raw: {data} | Decoded: {data.decode('ascii', errors='ignore')}")
 
-            device_id, value = extract_value(data)
+            clean_str = data.decode('ascii', errors='ignore').strip()
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            device_name = f"Device {device_id}" if device_id != "Unknown" else STATION_NAME
 
-            with data_lock:
-                station_data["name"]      = device_name
-                station_data["val"]       = value
-                station_data["time"]      = current_time
-                station_data["sender_ip"] = sender_ip
-                station_data["last_seen"] = time.time()
-                station_data["online"]    = True
+            # Check if this packet is a heartbeat (e.g. "120,PING" or "PING")
+            if "PING" in clean_str.upper() or "HEARTBEAT" in clean_str.upper():
+                device_id = clean_str.split(',')[0].strip() if ',' in clean_str else "120"
+                device_name = f"Device {device_id}"
 
-            save_to_db(device_name, sender_ip, value, current_time)
+                with data_lock:
+                    station_data["name"]      = device_name
+                    station_data["sender_ip"] = sender_ip
+                    station_data["last_seen"] = time.time()
+                    station_data["online"]    = True
+                    if station_data["time"] == "--":
+                        station_data["time"] = current_time
+            else:
+                device_id, value = extract_value(data)
+                device_name = f"Device {device_id}" if device_id != "Unknown" else STATION_NAME
+
+                with data_lock:
+                    station_data["name"]      = device_name
+                    station_data["val"]       = value
+                    station_data["time"]      = current_time
+                    station_data["sender_ip"] = sender_ip
+                    station_data["last_seen"] = time.time()
+                    station_data["online"]    = True
+
+                save_to_db(device_name, sender_ip, value, current_time)
 
         except socket.timeout:
             continue
