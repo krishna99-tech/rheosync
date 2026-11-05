@@ -363,6 +363,8 @@ def generate_and_save_report(report_data: dict) -> dict:
     ws["C7"] = date_str
     ws["H7"] = operator_id
     ws["C8"] = shift
+    ws["F8"] = "Part / Model No "
+    ws["H8"] = part_number
 
     # PART A (Row 19 - 22)
     ws["G19"] = part_a.get("batch", "")

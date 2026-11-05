@@ -538,9 +538,9 @@
         <span id="nav-shift-name">Shift: Calculating...</span>
       </span>
       <span>/</span>
-      <span class="devices-live-pill" id="devices-live-pill" title="Connected devices across network">
+      <span class="devices-live-pill" id="devices-live-pill" title="Connected dashboard sessions / web users">
         <span class="devices-indicator-dot"></span>
-        <span id="devices-count-txt">1 Device Online</span>
+        <span id="devices-count-txt">1 Web User Connected</span>
       </span>
       <span>/</span>
       <a href="/reports">Reports Archive</a>
@@ -581,11 +581,11 @@
       </span>
     </div>
 
-    <div class="m-user-section-title">Connected Devices</div>
+    <div class="m-user-section-title">Connected Web Users</div>
     <div class="m-user-row" style="margin-bottom: 12px;">
       <span class="devices-live-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; width: 100%;">
         <span class="devices-indicator-dot" style="background: #16a34a; box-shadow: 0 0 6px #16a34a;"></span>
-        <span id="m-devices-count-txt">1 Device Online</span>
+        <span id="m-devices-count-txt">1 Web User Connected</span>
       </span>
     </div>
 
@@ -638,7 +638,7 @@
         </div>
         <div style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: #475569; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">
           <span class="devices-indicator-dot" style="background: #0ea5e9; box-shadow: 0 0 5px #0ea5e9;"></span>
-          <span id="side-devices-count-txt">1 Device Online</span>
+          <span id="side-devices-count-txt">1 Web User Connected</span>
         </div>
       </div>
 
@@ -877,13 +877,13 @@
           }
         }
 
-        // 2. Update Connected Devices Count Badge
+        // 2. Update Connected Web Users Count Badge
         const count = data.clients_count || 1;
         const devs = data.clients_devices || [myDeviceType];
-        let devLabel = `${count} Device${count > 1 ? 's' : ''} Online`;
+        let devLabel = `${count} Web User${count > 1 ? 's' : ''} Connected`;
         if (count > 1) {
           const uniqueDevs = [...new Set(devs)];
-          devLabel = `${count} Online (${uniqueDevs.join(' & ')})`;
+          devLabel = `${count} Users (${uniqueDevs.join(' & ')})`;
         }
         const dTxt = document.getElementById('devices-count-txt');
         if (dTxt) dTxt.innerText = devLabel;
