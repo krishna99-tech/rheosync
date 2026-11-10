@@ -129,6 +129,111 @@
     border-color: #fecaca;
     border-left-color: #ef4444;
   }
+  .telemetry-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .telemetry-status-pill.online {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+  }
+  .telemetry-status-pill.offline {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+  .telemetry-status-pill .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .telemetry-status-pill.online .status-dot {
+    background: #22c55e;
+    box-shadow: 0 0 6px #22c55e;
+  }
+  .telemetry-status-pill.offline .status-dot {
+    background: #ef4444;
+  }
+
+  /* Form Process Mode Border Accents */
+  #report-form {
+    border-top: 4px solid #f59e0b;
+    border-radius: 4px;
+    transition: border-color 0.3s ease;
+  }
+  #report-form.mode-primer {
+    border-top-color: #f59e0b;
+  }
+  #report-form.mode-paint {
+    border-top-color: #3b82f6;
+  }
+
+  /* Process Badges on Fieldset Headers */
+  .process-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-left: 10px;
+    vertical-align: middle;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+  }
+  .process-pill.primer {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+  .process-pill.paint {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+  .spec-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 10px;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+  }
+  .spec-pill.primer {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fef3c7;
+  }
+  .spec-pill.paint {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #dbeafe;
+  }
+
+  /* Dynamic Submit Button Accents */
+  .btn-submit-primer {
+    background: #d97706 !important;
+  }
+  .btn-submit-primer:hover {
+    background: #b45309 !important;
+  }
+  .btn-submit-paint {
+    background: #2563eb !important;
+  }
+  .btn-submit-paint:hover {
+    background: #1d4ed8 !important;
+  }
 
   /* DJANGO MODULE / FIELDSET */
   .module {
@@ -494,14 +599,18 @@
 
   <!-- DJANGO TELEMETRY ALERT BANNER -->
   <div class="django-banner offline" id="telemetry-banner">
-    <div>
-      <strong id="banner-status-txt">STATION OFFLINE:</strong>
-      <span id="banner-desc-txt">Waiting for incoming UDP packets on port 63363...</span>
-      (IP: <span id="banner-ip-txt">Waiting</span> | Last Seen: <span id="banner-time-txt">--</span>)
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <span class="telemetry-status-pill offline" id="banner-status-pill">
+        <span class="status-dot"></span>
+        <span id="banner-status-txt">STATION OFFLINE</span>
+      </span>
+      <span id="banner-live-wrap" style="font-size: 13px; color: #475569; display: none;">
+        Live Viscosity: <strong id="banner-live-val" style="font-size: 14px; color: #0f172a;">0.00</strong> sec
+      </span>
     </div>
     <div>
-      <button type="button" onclick="captureLiveValue()" style="background: #15803d; color:#fff; border:none; padding: 5px 12px; border-radius:3px; font-size:12px; font-weight:600; cursor:pointer;">
-        Capture to Form
+      <button type="button" id="btn-capture-live" onclick="captureLiveValue()" disabled style="background: #15803d; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: not-allowed; opacity: 0.5; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+        <span>📥 Capture to Form</span>
       </button>
     </div>
   </div>
@@ -512,20 +621,23 @@
 
     <!-- FIELDSET 1: IDENTIFICATION & WORK SHIFT -->
     <fieldset class="module">
-      <h2>1. Test Identification & Work Shift</h2>
+      <h2 style="display: flex; align-items: center; justify-content: space-between;">
+        <span>1. Test Identification & Work Shift</span>
+        <span id="section1-mode-badge" class="process-pill primer">🎨 Primer Coat</span>
+      </h2>
       <div class="form-row-grid-3">
         <div class="field-box">
-          <label for="part_number" class="required">Part / Model Number (Cell H8)</label>
+          <label for="part_number" class="required">Part / Model Number</label>
           <input type="text" id="part_number" name="part_number" value="1021F0001" placeholder="e.g. 1021F0001" required>
           <div class="help">Component model code (e.g. 1021F0001 or 1021H0001-H).</div>
         </div>
         <div class="field-box">
-          <label for="operator_id" class="required">Operator ID (Cell H7)</label>
+          <label for="operator_id" class="required">Operator ID</label>
           <input type="text" id="operator_id" name="operator_id" placeholder="e.g. Operator Name or ID" required>
           <div class="help">Assigned quality inspector on shift.</div>
         </div>
         <div class="field-box">
-          <label for="shift" class="required">Shift (Cell C8)</label>
+          <label for="shift" class="required">Shift</label>
           <input type="text" id="shift" name="shift" value="Shift A" required>
           <div class="help">Production shift (auto-populated by live shift).</div>
         </div>
@@ -537,19 +649,19 @@
       <h2>2. PART A Material Specification</h2>
       <div class="form-row-grid-4">
         <div class="field-box">
-          <label for="part_a_batch" class="required">Batch Number (G19)</label>
+          <label for="part_a_batch" class="required">Batch Number</label>
           <input type="text" id="part_a_batch" name="part_a_batch" value="PWH2636103140" required>
         </div>
         <div class="field-box">
-          <label for="part_a_mfg" class="required">Manufacturing Date (G20)</label>
+          <label for="part_a_mfg" class="required">Manufacturing Date</label>
           <input type="date" id="part_a_mfg" name="part_a_mfg" required>
         </div>
         <div class="field-box">
-          <label for="part_a_exp" class="required">Expiry Date (G21)</label>
+          <label for="part_a_exp" class="required">Expiry Date</label>
           <input type="date" id="part_a_exp" name="part_a_exp" required>
         </div>
         <div class="field-box">
-          <label for="part_a_qty">In Take Quantity (G22)</label>
+          <label for="part_a_qty">In Take Quantity</label>
           <input type="text" id="part_a_qty" name="part_a_qty" value="4.0 L">
         </div>
       </div>
@@ -560,19 +672,19 @@
       <h2>3. PART B Material Specification</h2>
       <div class="form-row-grid-4">
         <div class="field-box">
-          <label for="part_b_batch" class="required">Batch Number (G25)</label>
+          <label for="part_b_batch" class="required">Batch Number</label>
           <input type="text" id="part_b_batch" name="part_b_batch" value="PWH2636103141" required>
         </div>
         <div class="field-box">
-          <label for="part_b_mfg" class="required">Manufacturing Date (G26)</label>
+          <label for="part_b_mfg" class="required">Manufacturing Date</label>
           <input type="date" id="part_b_mfg" name="part_b_mfg" required>
         </div>
         <div class="field-box">
-          <label for="part_b_exp" class="required">Expiry Date (G27)</label>
+          <label for="part_b_exp" class="required">Expiry Date</label>
           <input type="date" id="part_b_exp" name="part_b_exp" required>
         </div>
         <div class="field-box">
-          <label for="part_b_qty">In Take Quantity (G28)</label>
+          <label for="part_b_qty">In Take Quantity</label>
           <input type="text" id="part_b_qty" name="part_b_qty" value="1.0 L">
         </div>
       </div>
@@ -583,19 +695,19 @@
       <h2>4. Thinner Specification</h2>
       <div class="form-row-grid-4">
         <div class="field-box">
-          <label for="thinner_batch">Batch Number (G101)</label>
+          <label for="thinner_batch">Batch Number</label>
           <input type="text" id="thinner_batch" name="thinner_batch" value="THN20260901">
         </div>
         <div class="field-box">
-          <label for="thinner_mfg">Manufacturing Date (G102)</label>
+          <label for="thinner_mfg">Manufacturing Date</label>
           <input type="date" id="thinner_mfg" name="thinner_mfg">
         </div>
         <div class="field-box">
-          <label for="thinner_exp">Expiry Date (G103)</label>
+          <label for="thinner_exp">Expiry Date</label>
           <input type="date" id="thinner_exp" name="thinner_exp">
         </div>
         <div class="field-box">
-          <label for="thinner_qty">In Take Quantity (G104)</label>
+          <label for="thinner_qty">In Take Quantity</label>
           <input type="text" id="thinner_qty" name="thinner_qty" value="0.5 L">
         </div>
       </div>
@@ -603,20 +715,23 @@
 
     <!-- FIELDSET 5: VISCOSITY SPECIFICATIONS & MEASUREMENT -->
     <fieldset class="module">
-      <h2>5. Viscosity Specifications & Actual Reading</h2>
+      <h2 style="display: flex; align-items: center; justify-content: space-between;">
+        <span>5. Viscosity Specifications & Actual Reading</span>
+        <span id="section5-spec-badge" class="spec-pill primer">Target: 18.00 — 24.00 sec</span>
+      </h2>
       <div class="form-row-grid-3">
         <div class="field-box">
-          <label for="min_viscosity" class="required">Min Specification (Cell G108)</label>
+          <label for="min_viscosity" class="required">Min Specification</label>
           <input type="number" step="0.01" id="min_viscosity" name="min_viscosity" value="18.00" oninput="calculateResult()" required>
-          <div class="help">Lower tolerance limit in sec / cSt.</div>
+          <div class="help">Lower tolerance limit in seconds (sec).</div>
         </div>
         <div class="field-box">
-          <label for="max_viscosity" class="required">Max Specification (Cell H108)</label>
+          <label for="max_viscosity" class="required">Max Specification</label>
           <input type="number" step="0.01" id="max_viscosity" name="max_viscosity" value="24.00" oninput="calculateResult()" required>
-          <div class="help">Upper tolerance limit in sec / cSt.</div>
+          <div class="help">Upper tolerance limit in seconds (sec).</div>
         </div>
         <div class="field-box">
-          <label for="actual_viscosity" class="required" style="color: var(--primary);">Actual Value (Cell I108)</label>
+          <label for="actual_viscosity" class="required" style="color: var(--primary);">Actual Value</label>
           <input type="number" step="0.01" id="actual_viscosity" name="actual_viscosity" value="21.45" oninput="calculateResult()" style="font-weight:bold; border-color: var(--primary);" required>
           <div class="help">Captured via IoT or entered manually.</div>
         </div>
@@ -629,11 +744,11 @@
           <span id="spec-range-label">18.00 — 24.00</span>
         </div>
         <div class="eval-meta-item" style="text-align: right;">
-          <span>Target Sheet & Cell</span>
-          <span id="eval-target-label">Primer  | Cell I108</span>
+          <span>Target Process</span>
+          <span id="eval-target-label">Primer Coat</span>
         </div>
         <div class="eval-center-badge-wrap">
-          <span class="eval-center-title">Overall Evaluation (Cell H6)</span>
+          <span class="eval-center-title">Overall Evaluation</span>
           <div class="django-badge-large pass" id="eval-result-badge">PASS</div>
           <span id="overall-status-text" style="font-size: 11px; font-weight: 600; color: #15803d; margin-top: 4px;">Pass</span>
         </div>
@@ -648,7 +763,7 @@
       </div>
       <input type="button" value="Clear Form" class="closelink" onclick="resetFormDefaults()">
       <input type="button" value="Save and add another" class="btn-secondary-green" onclick="submitAndReset()">
-      <input type="submit" value="Save & Generate Report (Excel & PDF)" class="default" id="btn-save-report">
+      <input type="submit" value="Save & Generate Primer Coat Report (Excel & PDF)" class="default btn-submit-primer" id="btn-save-report">
     </div>
   </form>
 </div>
@@ -672,12 +787,17 @@
   initDefaultDates();
 
   // Template Switcher (Primer vs Paint Coat)
+  let initialModeSet = false;
   function selectTemplate(templateName, broadcast = true) {
     document.getElementById('process_type').value = templateName;
     const tabPrimer = document.getElementById('tab-primer');
     const tabPaint = document.getElementById('tab-paint');
     const targetLabel = document.getElementById('eval-target-label');
     const mobileSelect = document.getElementById('mobile-template-select');
+    const formElem = document.getElementById('report-form');
+    const s1Badge = document.getElementById('section1-mode-badge');
+    const s5Badge = document.getElementById('section5-spec-badge');
+    const btnSave = document.getElementById('btn-save-report');
 
     if (mobileSelect && mobileSelect.value !== templateName) {
       mobileSelect.value = templateName;
@@ -686,8 +806,21 @@
     if (templateName === 'Primer ') {
       if (tabPrimer) tabPrimer.className = 'django-tab active';
       if (tabPaint) tabPaint.className = 'django-tab';
+      if (formElem) formElem.className = 'mode-primer';
+      if (s1Badge) {
+        s1Badge.className = 'process-pill primer';
+        s1Badge.innerText = '🎨 Primer Coat';
+      }
+      if (s5Badge) {
+        s5Badge.className = 'spec-pill primer';
+        s5Badge.innerText = 'Target: 18.00 — 24.00 sec';
+      }
+      if (btnSave) {
+        btnSave.value = 'Save & Generate Primer Coat Report (Excel & PDF)';
+        btnSave.className = 'default btn-submit-primer';
+      }
       if (targetLabel) {
-        targetLabel.innerText = 'Primer  | Cell I108';
+        targetLabel.innerText = 'Primer Coat';
         targetLabel.style.color = '#b45309';
       }
       if (mobileSelect) {
@@ -695,11 +828,27 @@
       }
       document.getElementById('min_viscosity').value = '18.00';
       document.getElementById('max_viscosity').value = '24.00';
+      if (initialModeSet && typeof showToast === 'function') {
+        showToast('Switched to Primer Coat (18.00 — 24.00 sec)', 'info');
+      }
     } else {
       if (tabPaint) tabPaint.className = 'django-tab active';
       if (tabPrimer) tabPrimer.className = 'django-tab';
+      if (formElem) formElem.className = 'mode-paint';
+      if (s1Badge) {
+        s1Badge.className = 'process-pill paint';
+        s1Badge.innerText = '🖌️ Paint Top Coat';
+      }
+      if (s5Badge) {
+        s5Badge.className = 'spec-pill paint';
+        s5Badge.innerText = 'Target: 22.00 — 28.00 sec';
+      }
+      if (btnSave) {
+        btnSave.value = 'Save & Generate Paint Top Coat Report (Excel & PDF)';
+        btnSave.className = 'default btn-submit-paint';
+      }
       if (targetLabel) {
-        targetLabel.innerText = 'Paint Coat  | Cell I108';
+        targetLabel.innerText = 'Paint Top Coat';
         targetLabel.style.color = '#1d4ed8';
       }
       if (mobileSelect) {
@@ -707,7 +856,11 @@
       }
       document.getElementById('min_viscosity').value = '22.00';
       document.getElementById('max_viscosity').value = '28.00';
+      if (initialModeSet && typeof showToast === 'function') {
+        showToast('Switched to Paint Top Coat (22.00 — 28.00 sec)', 'info');
+      }
     }
+    initialModeSet = true;
     calculateResult();
 
     if (broadcast && typeof broadcastFormChange === 'function') {
@@ -779,22 +932,38 @@
   function onTelemetryUpdate(station, isOnline, session) {
     const banner = document.getElementById('telemetry-banner');
     const bannerStatus = document.getElementById('banner-status-txt');
-    const bannerDesc = document.getElementById('banner-desc-txt');
-    const bannerIp = document.getElementById('banner-ip-txt');
-    const bannerTime = document.getElementById('banner-time-txt');
+    const bannerPill = document.getElementById('banner-status-pill');
+    const bannerLiveVal = document.getElementById('banner-live-val');
 
-    if (bannerIp) bannerIp.innerText = station.sender_ip || 'Auto-Detecting...';
-    if (bannerTime) bannerTime.innerText = station.time || '--';
+    if (bannerLiveVal && station.val !== undefined) {
+      bannerLiveVal.innerText = station.val;
+      currentLiveViscosity = station.val;
+    }
 
     if (banner) {
+      const liveWrap = document.getElementById('banner-live-wrap');
+      const captureBtn = document.getElementById('btn-capture-live');
+
       if (isOnline) {
         banner.className = 'django-banner online';
-        bannerStatus.innerText = 'STATION ONLINE:';
-        bannerDesc.innerText = 'Streaming packets actively from IoT Viscometer.';
+        if (bannerPill) bannerPill.className = 'telemetry-status-pill online';
+        if (bannerStatus) bannerStatus.innerText = 'STATION ONLINE';
+        if (liveWrap) liveWrap.style.display = 'inline';
+        if (captureBtn) {
+          captureBtn.disabled = false;
+          captureBtn.style.opacity = '1';
+          captureBtn.style.cursor = 'pointer';
+        }
       } else {
         banner.className = 'django-banner offline';
-        bannerStatus.innerText = 'STATION OFFLINE:';
-        bannerDesc.innerText = 'Waiting for incoming UDP packets on port 63363...';
+        if (bannerPill) bannerPill.className = 'telemetry-status-pill offline';
+        if (bannerStatus) bannerStatus.innerText = 'STATION OFFLINE';
+        if (liveWrap) liveWrap.style.display = 'none';
+        if (captureBtn) {
+          captureBtn.disabled = true;
+          captureBtn.style.opacity = '0.5';
+          captureBtn.style.cursor = 'not-allowed';
+        }
       }
     }
 
@@ -823,12 +992,18 @@
     const liveVal = parseFloat(currentLiveViscosity);
     if (!isNaN(liveVal) && liveVal > 0) {
       const formatted = liveVal.toFixed(2);
-      document.getElementById('actual_viscosity').value = formatted;
+      const actualInput = document.getElementById('actual_viscosity');
+      if (actualInput) {
+        actualInput.value = formatted;
+        actualInput.style.transition = 'background-color 0.4s ease';
+        actualInput.style.backgroundColor = '#dcfce7';
+        setTimeout(() => { actualInput.style.backgroundColor = ''; }, 1200);
+      }
       broadcastFormChange('actual_viscosity', formatted);
-      showToast(`Captured live viscosity: ${formatted} cSt`, 'success');
+      showToast(`Captured live viscosity: ${formatted} sec`, 'success');
       calculateResult();
     } else {
-      showToast('No active live reading from device. Check UDP connection.', 'error');
+      showToast('No active reading from station yet. Run a test first.', 'error');
     }
   }
 

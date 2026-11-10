@@ -135,7 +135,7 @@ void startConfigPortal() {
   Serial.println("Connect to Access Point: ESP32_Config");
   
   // Start captive portal (Blocks here until configured or timeout)
-  if (!wm.startConfigPortal("ESP32_Config")) {
+  if (!wm.startConfigPortal("Viscosity_walvoil_Config")) {
     Serial.println("❌ Failed to connect and hit timeout. Restarting...");
     delay(3000);
     ESP.restart();

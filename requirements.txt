@@ -13,8 +13,9 @@ openpyxl==3.1.5
 et-xmlfile==2.0.0
 Pillow==11.1.0
 
-# Production WSGI Server (Linux only: Ubuntu, Debian, CentOS, Raspberry Pi)
+# Production WSGI Server (Linux: gunicorn, Windows: waitress)
 gunicorn==23.0.0; sys_platform != 'win32'
+waitress>=3.0.0; sys_platform == 'win32'
 
 # Native Microsoft Excel COM Automation for PDF Export (Windows only)
 pywin32==310; sys_platform == 'win32'

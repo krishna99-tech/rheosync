@@ -32,6 +32,7 @@ Reports/
 test_*.xlsx
 test_*.pdf
 *.log
+logs/
 
 # Environment & Secrets
 .env

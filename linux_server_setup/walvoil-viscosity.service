@@ -1,0 +1,22 @@
+[Unit]
+Description=Walvoil IoT Viscosity Measurement & Reporting Service
+After=network.target
+
+[Service]
+Type=simple
+# Replace 'ubuntu' and working directory with your actual server user/path
+# (The install.sh script configures this automatically)
+User=ubuntu
+WorkingDirectory=/home/ubuntu/viscocity_walvoil
+Environment="PATH=/home/ubuntu/viscocity_walvoil/venv/bin"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/home/ubuntu/viscocity_walvoil/venv/bin/gunicorn -w 1 --threads 8 -b 0.0.0.0:5001 --access-logfile - --error-logfile - app:app
+Restart=always
+RestartSec=5
+KillSignal=SIGQUIT
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

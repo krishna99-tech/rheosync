@@ -1,15 +1,33 @@
-version: '3.8'
+# ==============================================================================
+# WALVOIL — IoT VISCOSITY MEASUREMENT & REPORTING SYSTEM
+# Production Docker Compose Configuration
+# ==============================================================================
 
 services:
   walvoil-viscosity:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: walvoil_viscosity_app
     restart: unless-stopped
     ports:
-      - "5001:5001/tcp"       # Web Dashboard & API
-      - "63363:63363/udp"     # IoT Viscometer UDP Telemetry
+      - "5001:5001/tcp"       # Web Dashboard & Diagnostic REST API
+      - "63363:63363/udp"     # IoT Station Telemetry Receiver
     volumes:
-      - ./Reports:/app/Reports                   # Persist generated Excel & PDF reports on host
-      - ./device_data.db:/app/device_data.db     # Persist SQLite audit database on host
+      # 1. Reports Archive: Persists all generated Excel and PDF reports permanently on host
+      - ./Reports:/app/Reports
+      # 2. SQLite Database: Persists test audit trail and telemetry history permanently on host
+      - ./device_data.db:/app/device_data.db
+      # 3. Application Logs: Exposes rotating industrial log files (app.log) directly on host
+      - ./logs:/app/logs
     environment:
-      - TZ=Asia/Kolkata       # Adjust timezone as required
+      - TZ=Asia/Kolkata
+      - FLASK_DEBUG=0
+      - PORT=5001
+      - UDP_PORT=63363
+      - OFFLINE_TIMEOUT=30
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -46,23 +46,29 @@ pip install -r requirements.txt
 
 ## ▶️ Step 2: Start the Application
 
-### Standard Startup (Development / Local Workstation)
-Run the Flask server:
+### Production Startup (Recommended — Waitress WSGI Server)
+Run the application server:
 ```powershell
+python app.py
+```
+> This starts the multi-threaded **Waitress WSGI production server** (8 worker threads), initializes SQLite WAL mode, sets up the non-blocking UDP receiver on port 63363, and writes industrial logs to `logs/app.log`.
+
+### Development / Debug Mode (Optional)
+If modifying code or needing live reloads:
+```powershell
+$env:FLASK_DEBUG = "1"
 python app.py
 ```
 
 ### Console Output Confirmation
-When running successfully, the console will display:
+When running in production, the console will display:
 ```
-======================================================================
-  WALVOIL VISCOSITY UDP SERVER ACTIVE — PORT 63363 | 0.0.0.0
-  Auto-detecting incoming Viscometer device packets...
-======================================================================
- * Serving Flask app 'app'
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:5001
- * Running on http://<YOUR_LOCAL_IP>:5001
+=================================================================
+  WALVOIL VISCOSITY SYSTEM — PRODUCTION SERVER (WAITRESS WSGI)
+  Listening on: http://0.0.0.0:5001 (8 worker threads)
+  Database WAL Mode: Enabled | UDP Port: 63363
+  Logging to: logs/app.log
+=================================================================
 ```
 
 ---
@@ -77,7 +83,6 @@ Open any web browser (Chrome, Edge, Firefox) and navigate to:
 ### Key Pages:
 - **Test & Generator**: `http://localhost:5001/`
 - **Reports Archive**: `http://localhost:5001/reports`
-- **System Benefits & Specs**: `http://localhost:5001/benefits`
 
 ---
 
@@ -108,9 +113,23 @@ python debug/debug.py --host 127.0.0.1 --port 63363
 # Interactive manual test (Press ENTER to start / stop flow):
 python debug/debug.py --interactive --host 127.0.0.1 --port 63363
 
-# Send an instant test measurement (e.g. 21.50 cSt):
+# Send an instant test measurement (e.g. 21.50 sec):
 python debug/debug.py --val 21.50 --host 127.0.0.1 --port 63363
 ```
+
+---
+
+## 🐧 Alternative: Running Directly on Linux Server (Bare Metal / VM)
+
+For production deployment on an Ubuntu/Debian server or cloud VM (AWS EC2, Azure VM, DigitalOcean):
+
+See the complete guide in [`linux_server_setup/README_LINUX_SETUP.md`](../linux_server_setup/README_LINUX_SETUP.md).
+
+### Quick 1-Click Install on Linux:
+```bash
+sudo bash linux_server_setup/install.sh
+```
+> Installs all packages, creates `venv`, sets up Gunicorn (`-w 1 --threads 8`), registers the `walvoil-viscosity` systemd background service, and configures UFW firewall rules.
 
 ---
 
