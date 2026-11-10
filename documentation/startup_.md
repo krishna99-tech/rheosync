@@ -6,11 +6,11 @@ This guide walks you through setting up, configuring, and starting the **Walvoil
 
 ## 📋 System Requirements & Network Ports
 
-| Service | Protocol | Default Port | Description |
-| :--- | :--- | :--- | :--- |
-| **Web Dashboard** | TCP | `5001` | Flask Web UI, Reports Archive, Session Sync |
-| **IoT Telemetry** | UDP | `63363` | Real-time ESP32 packet receiver & heartbeat monitor |
-| **Python Version** | Python 3.10+ | — | Recommended environment |
+| Service                  | Protocol     | Default Port | Description                                         |
+| :----------------------- | :----------- | :----------- | :-------------------------------------------------- |
+| **Web Dashboard**  | TCP          | `5001`     | Flask Web UI, Reports Archive, Session Sync         |
+| **IoT Telemetry**  | UDP          | `63363`    | Real-time ESP32 packet receiver & heartbeat monitor |
+| **Python Version** | Python 3.10+ | —           | Recommended environment                             |
 
 ---
 
@@ -23,7 +23,9 @@ cd c:\Users\vakav\virtualpy\viscocity_walvoil
 ```
 
 ### 1. (Optional) Activate Virtual Environment
+
 If you are using a Python virtual environment:
+
 ```powershell
 # Windows PowerShell
 .\venv\Scripts\Activate.ps1
@@ -33,12 +35,14 @@ venv\Scripts\activate.bat
 ```
 
 ### 2. Install Required Python Packages
+
 ```powershell
 pip install -r requirements.txt
 ```
 
 > [!NOTE]
 > For generating PDF reports:
+>
 > - **Windows**: Requires Microsoft Excel (via `win32com`) or [LibreOffice](https://www.libreoffice.org/) installed.
 > - **Linux / Docker**: Uses headless `libreoffice` automatically.
 
@@ -47,21 +51,28 @@ pip install -r requirements.txt
 ## ▶️ Step 2: Start the Application
 
 ### Production Startup (Recommended — Waitress WSGI Server)
+
 Run the application server:
+
 ```powershell
 python app.py
 ```
+
 > This starts the multi-threaded **Waitress WSGI production server** (8 worker threads), initializes SQLite WAL mode, sets up the non-blocking UDP receiver on port 63363, and writes industrial logs to `logs/app.log`.
 
 ### Development / Debug Mode (Optional)
+
 If modifying code or needing live reloads:
+
 ```powershell
 $env:FLASK_DEBUG = "1"
 python app.py
 ```
 
 ### Console Output Confirmation
+
 When running in production, the console will display:
+
 ```
 =================================================================
   WALVOIL VISCOSITY SYSTEM — PRODUCTION SERVER (WAITRESS WSGI)
@@ -81,6 +92,7 @@ Open any web browser (Chrome, Edge, Firefox) and navigate to:
 - **Same Network / Mobile Phone**: `http://<SERVER_IP>:5001` *(e.g. `http://192.168.0.152:5001`)*
 
 ### Key Pages:
+
 - **Test & Generator**: `http://localhost:5001/`
 - **Reports Archive**: `http://localhost:5001/reports`
 
@@ -126,9 +138,11 @@ For production deployment on an Ubuntu/Debian server or cloud VM (AWS EC2, Azure
 See the complete guide in [`linux_server_setup/README_LINUX_SETUP.md`](../linux_server_setup/README_LINUX_SETUP.md).
 
 ### Quick 1-Click Install on Linux:
+
 ```bash
 sudo bash linux_server_setup/install.sh
 ```
+
 > Installs all packages, creates `venv`, sets up Gunicorn (`-w 1 --threads 8`), registers the `walvoil-viscosity` systemd background service, and configures UFW firewall rules.
 
 ---
@@ -153,20 +167,24 @@ docker-compose down
 ## ❓ Troubleshooting & FAQs
 
 ### 1. "Address already in use" or UDP Port 63363 blocked?
+
 `app.py` includes an automatic cleanup mechanism (`kill_port_owner`) that frees port 63363 on startup. If blocked manually:
+
 ```powershell
 # Find process using UDP 63363
 Get-NetUDPEndpoint -LocalPort 63363
 ```
 
 ### 2. Windows Firewall blocking ESP32 packets?
+
 Allow inbound UDP traffic on port 63363:
+
 ```powershell
 netsh advfirewall firewall add rule name="Walvoil UDP Telemetry" dir=in action=allow protocol=UDP localport=63363
 ```
 
 ### 3. Dashboard shows "STATION OFFLINE"?
+
 - Ensure the ESP32 is on the **same local subnet** (e.g., `192.168.0.x`).
 - Verify `SERVER_IP` in the `.ino` firmware points to the machine running `app.py`.
 - If using `debug.py`, run with `--host 127.0.0.1 --port 63363`.
-

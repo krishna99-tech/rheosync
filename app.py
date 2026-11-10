@@ -104,7 +104,6 @@ _shutdown_event = threading.Event()
 def close_udp_socket():
     """Cleanly releases the UDP socket resource without orphaned locks."""
     global _udp_sock
-    _shutdown_event.set()
     if _udp_sock:
         try:
             _udp_sock.close()
@@ -131,6 +130,46 @@ try:
 except (ValueError, AttributeError):
     # Signals are not permitted outside main thread in some multi-threaded runners
     pass
+
+def clean_udp_port(port: int):
+    """Frees UDP port on Windows/Linux from any orphaned python processes."""
+    own_pid = os.getpid()
+    parent_pid = os.getppid() if hasattr(os, 'getppid') else None
+    try:
+        if platform.system().lower() == "windows":
+            result = subprocess.check_output(
+                "netstat -ano -p UDP", shell=True
+            ).decode(errors="ignore")
+            for line in result.strip().splitlines():
+                parts = line.strip().split()
+                # Format: UDP  0.0.0.0:63363  *:*  1234
+                if len(parts) >= 4 and f":{port}" in parts[1]:
+                    try:
+                        pid = int(parts[-1])
+                        if pid > 4 and pid not in (own_pid, parent_pid):
+                            subprocess.call(
+                                f"taskkill /F /PID {pid}",
+                                shell=True,
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL
+                            )
+                            logger.info(f"[STARTUP] Cleaned orphaned process PID {pid} holding UDP port {port}")
+                    except ValueError:
+                        continue
+        else:
+            result = subprocess.check_output(
+                ["fuser", f"{port}/udp"], stderr=subprocess.DEVNULL
+            ).decode(errors="ignore")
+            for pid_str in result.strip().split():
+                try:
+                    pid = int(pid_str)
+                    if pid > 1 and pid not in (own_pid, parent_pid):
+                        os.kill(pid, 9)
+                        logger.info(f"[STARTUP] Cleaned orphaned process PID {pid} holding port {port}")
+                except ValueError:
+                    continue
+    except Exception as e:
+        logger.debug(f"[PORT CLEAN] {e}")
 
 def diagnose_port_status(port: int):
     """Non-destructive diagnostic check. Warns if a port appears already occupied."""
@@ -296,7 +335,12 @@ def is_safe_path(target_path: str, base_dir: str = BASE_DIR) -> bool:
 # ================================================================
 def _udp_loop():
     global _udp_sock
-    close_udp_socket()
+    if _udp_sock:
+        try:
+            _udp_sock.close()
+        except Exception:
+            pass
+        _udp_sock = None
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -412,7 +456,9 @@ def start_background_services():
             return
         _services_started = True
 
-        diagnose_port_status(UDP_PORT)
+        _shutdown_event.clear()
+        clean_udp_port(UDP_PORT)
+        time.sleep(0.2)
         threading.Thread(target=udp_listener, daemon=True, name="udp-listener").start()
         threading.Thread(target=offline_monitor, daemon=True, name="offline-monitor").start()
         logger.info("[STARTUP] Background UDP listener and offline watchdog initialized.")
