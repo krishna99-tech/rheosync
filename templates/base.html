@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Walvoil Viscosity Administration{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Local Offline Typography (Roboto & Roboto Mono) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}">
   <style>
     :root {
       --primary: #15803d;
@@ -639,7 +638,7 @@
         </div>
       </div>
 
-      <div class="sidebar-section-title">IoT Telemetry</div>
+      <div class="sidebar-section-title">Latest Telemetry</div>
       <div class="sidebar-telemetry-box">
         <h4>Station Live Reading</h4>
         <div class="sidebar-telemetry-val">

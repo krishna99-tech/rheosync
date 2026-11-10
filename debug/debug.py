@@ -40,7 +40,7 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 # Default settings matching main.ino
 # (main.ino uses 192.168.0.150 for server; default to 127.0.0.1 for local testing)
-DEFAULT_HOST = "127.0.0.1"
+DEFAULT_HOST = "192.168.0.159"
 DEFAULT_PORT = 63363
 MAX_RETRIES  = 3
 

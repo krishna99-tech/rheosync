@@ -9,7 +9,7 @@
   <span>&rsaquo;</span>
   <a href="#">Quality Control</a>
   <span>&rsaquo;</span>
-  <a href="#">IoT Viscometer Station</a>
+  <a href="#">Viscometer Station</a>
   <span>&rsaquo;</span>
   <strong>Add Viscosity Test & Generate Report</strong>
 {% endblock %}
@@ -715,10 +715,7 @@
 
     <!-- FIELDSET 5: VISCOSITY SPECIFICATIONS & MEASUREMENT -->
     <fieldset class="module">
-      <h2 style="display: flex; align-items: center; justify-content: space-between;">
-        <span>5. Viscosity Specifications & Actual Reading</span>
-        <span id="section5-spec-badge" class="spec-pill primer">Target: 18.00 — 24.00 sec</span>
-      </h2>
+      <h2>5. Viscosity Specifications & Actual Reading</h2>
       <div class="form-row-grid-3">
         <div class="field-box">
           <label for="min_viscosity" class="required">Min Specification</label>
@@ -733,7 +730,7 @@
         <div class="field-box">
           <label for="actual_viscosity" class="required" style="color: var(--primary);">Actual Value</label>
           <input type="number" step="0.01" id="actual_viscosity" name="actual_viscosity" value="21.45" oninput="calculateResult()" style="font-weight:bold; border-color: var(--primary);" required>
-          <div class="help">Captured via IoT or entered manually.</div>
+          <div class="help">Captured via Viscometer or entered manually.</div>
         </div>
       </div>
 
@@ -796,7 +793,6 @@
     const mobileSelect = document.getElementById('mobile-template-select');
     const formElem = document.getElementById('report-form');
     const s1Badge = document.getElementById('section1-mode-badge');
-    const s5Badge = document.getElementById('section5-spec-badge');
     const btnSave = document.getElementById('btn-save-report');
 
     if (mobileSelect && mobileSelect.value !== templateName) {
@@ -810,10 +806,6 @@
       if (s1Badge) {
         s1Badge.className = 'process-pill primer';
         s1Badge.innerText = '🎨 Primer Coat';
-      }
-      if (s5Badge) {
-        s5Badge.className = 'spec-pill primer';
-        s5Badge.innerText = 'Target: 18.00 — 24.00 sec';
       }
       if (btnSave) {
         btnSave.value = 'Save & Generate Primer Coat Report (Excel & PDF)';
@@ -838,10 +830,6 @@
       if (s1Badge) {
         s1Badge.className = 'process-pill paint';
         s1Badge.innerText = '🖌️ Paint Top Coat';
-      }
-      if (s5Badge) {
-        s5Badge.className = 'spec-pill paint';
-        s5Badge.innerText = 'Target: 22.00 — 28.00 sec';
       }
       if (btnSave) {
         btnSave.value = 'Save & Generate Paint Top Coat Report (Excel & PDF)';

@@ -7,6 +7,7 @@
 Flask==3.0.3
 Werkzeug==3.0.1
 Jinja2==3.1.6
+python-dotenv>=1.0.0
 
 # Excel Report Generation & Template Processing (Viscosity report.xlsx)
 openpyxl==3.1.5

@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
-║   WALVOIL — IoT VISCOSITY MEASUREMENT & REPORTING SYSTEM             ║
+║   WALVOIL — VISCOSITY MEASUREMENT & REPORTING SYSTEM             ║
 ║   Single Station Architecture & Automated Dual Excel/PDF Generator   ║
 ╠══════════════════════════════════════════════════════════════════════╣
 ║  PRODUCTION ARCHITECTURE:                                            ║
@@ -44,6 +44,21 @@ except ImportError:
 # ENVIRONMENT CONFIGURATION
 # ================================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Automatically load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
+except ImportError:
+    _env_path = os.path.join(BASE_DIR, ".env")
+    if os.path.exists(_env_path):
+        with open(_env_path, "r", encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    os.environ.setdefault(_k.strip(), _v.strip().strip("'\""))
+
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
