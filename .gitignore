@@ -29,8 +29,6 @@ Reports/
 # Temporary, Backup & Test Files
 *.bak
 *.tmp
-test_*.xlsx
-test_*.pdf
 *.log
 logs/
 
@@ -49,3 +47,4 @@ logs/
 .DS_Store
 Thumbs.db
 desktop.ini
+

@@ -94,11 +94,27 @@
       object-fit: contain;
       display: block;
     }
+    .header-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .header-center a {
+      pointer-events: auto;
+      text-decoration: none;
+    }
     .nav-title-text {
-      font-size: 16px;
-      font-weight: 700;
+      font-size: 20px;
+      font-weight: 800;
       color: #fff;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.3px;
     }
 
     #user-tools {
@@ -441,12 +457,16 @@
       .nav-logo-img {
         height: 20px;
       }
+      .header-center {
+        max-width: calc(100vw - 130px);
+      }
       .nav-title-text {
-        font-size: 13px;
+        font-size: 15px;
+        font-weight: 800;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 150px;
+        max-width: 190px;
       }
       #user-tools {
         display: none !important;
@@ -522,6 +542,12 @@
         <div class="nav-logo-wrap">
           <img src="{{ url_for('static', filename='logo.png') }}" alt="Walvoil" class="nav-logo-img">
         </div>
+      </a>
+    </div>
+
+    <!-- CENTER TITLE IN HEADER -->
+    <div class="header-center">
+      <a href="/" style="text-decoration: none;">
         <span class="nav-title-text">Viscosity Administration</span>
       </a>
     </div>
@@ -597,9 +623,6 @@
     <a href="/" class="m-user-link">
       🧪 Viscosity Testing Form
     </a>
-    <a href="/ping_status" target="_blank" class="m-user-link">
-      🔍 Diagnostic API
-    </a>
   </div>
 
   <!-- BREADCRUMBS -->
@@ -663,9 +686,6 @@
       <ul class="sidebar-menu">
         <li class="{% block nav_reports_active %}{% endblock %}">
           <a href="/reports">📁 Archived Reports (Excel/PDF)</a>
-        </li>
-        <li>
-          <a href="/ping_status" target="_blank">🔍 Diagnostic API</a>
         </li>
       </ul>
     </aside>

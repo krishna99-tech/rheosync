@@ -9,10 +9,11 @@ Werkzeug==3.0.1
 Jinja2==3.1.6
 python-dotenv>=1.0.0
 
-# Excel Report Generation & Template Processing (Viscosity report.xlsx)
+# Excel & PDF Report Generation
 openpyxl==3.1.5
 et-xmlfile==2.0.0
 Pillow==11.1.0
+reportlab>=4.0.0
 
 # Production WSGI Server (Linux: gunicorn, Windows: waitress)
 gunicorn==23.0.0; sys_platform != 'win32'

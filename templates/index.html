@@ -5,13 +5,7 @@
 {% block nav_test_active %}active{% endblock %}
 
 {% block breadcrumbs %}
-  <a href="/">Home</a>
-  <span>&rsaquo;</span>
-  <a href="#">Quality Control</a>
-  <span>&rsaquo;</span>
-  <a href="#">Viscometer Station</a>
-  <span>&rsaquo;</span>
-  <strong>Add Viscosity Test & Generate Report</strong>
+  <strong>Viscosity Test & Report Generator</strong>
 {% endblock %}
 
 {% block extra_css %}
@@ -386,6 +380,94 @@
     border: 2px solid #fca5a5;
   }
 
+  /* TOP EXECUTIVE EVALUATION COCKPIT */
+  .top-eval-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-top: 4px solid #f59e0b;
+    transition: all 0.3s ease;
+  }
+  .top-eval-card.primer {
+    border-top-color: #f59e0b;
+  }
+  .top-eval-card.paint {
+    border-top-color: #2563eb;
+  }
+  .top-eval-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1.3fr;
+    gap: 16px;
+    align-items: center;
+  }
+  .top-eval-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .top-eval-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #64748b;
+  }
+  .top-eval-value {
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.2px;
+  }
+  .top-eval-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+  .top-eval-badge-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 16px;
+  }
+  .top-badge {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    padding: 7px 32px;
+    border-radius: 6px;
+    text-align: center;
+    min-width: 140px;
+    transition: all 0.25s ease;
+  }
+  .top-badge.waiting {
+    background: #e2e8f0;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+  .top-badge.pass {
+    background: #15803d;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(21, 128, 61, 0.35);
+  }
+  .top-badge.fail {
+    background: #dc2626;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+  }
+  .top-eval-subtext {
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+    color: #64748b;
+  }
+
   /* SUBMIT ROW */
   .submit-row {
     background: #f8fafc;
@@ -441,6 +523,23 @@
     background: #f0fdf4;
     color: #166534;
     border-color: #166534;
+  }
+
+  /* Countdown & Automation Animations */
+  @keyframes countdown-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  }
+  .pulse-countdown {
+    animation: countdown-pulse 1s infinite;
+  }
+  @keyframes status-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .status-pulse-dot {
+    animation: status-pulse 1.2s infinite ease-in-out;
   }
 
   /* RESPONSIVE MEDIA QUERIES FOR MOBILE (<= 768px) */
@@ -597,21 +696,25 @@
     </div>
   </div>
 
-  <!-- DJANGO TELEMETRY ALERT BANNER -->
-  <div class="django-banner offline" id="telemetry-banner">
-    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-      <span class="telemetry-status-pill offline" id="banner-status-pill">
-        <span class="status-dot"></span>
-        <span id="banner-status-txt">STATION OFFLINE</span>
-      </span>
-      <span id="banner-live-wrap" style="font-size: 13px; color: #475569; display: none;">
-        Live Viscosity: <strong id="banner-live-val" style="font-size: 14px; color: #0f172a;">0.00</strong> sec
-      </span>
-    </div>
-    <div>
-      <button type="button" id="btn-capture-live" onclick="captureLiveValue()" disabled style="background: #15803d; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: not-allowed; opacity: 0.5; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
-        <span>📥 Capture to Form</span>
-      </button>
+
+  <!-- PASS / FAIL STATUS ONLY -->
+  <div class="top-status-bar" id="top-eval-card" style="display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 20px; background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
+    <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;">Status:</span>
+    <div class="top-badge waiting" id="eval-result-badge" style="font-size: 18px; font-weight: 900; letter-spacing: 1.5px; padding: 6px 32px; border-radius: 6px; text-align: center; min-width: 130px; transition: all 0.25s ease;">WAITING</div>
+  </div>
+
+  <!-- 10-SECOND AUTOMATIC SAVING COUNTDOWN NOTIFICATION BANNER -->
+  <div id="countdown-banner" style="display: none; background: #fffbeb; border: 2px solid #f59e0b; border-radius: 6px; padding: 14px 20px; margin-bottom: 20px; align-items: center; justify-content: flex-start; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.18);">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div id="countdown-circle" class="pulse-countdown" style="width: 44px; height: 44px; border-radius: 50%; background: #f59e0b; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);">10</div>
+      <div>
+        <div style="font-weight: 700; color: #92400e; font-size: 15px;">
+          Hardware Measurement Received: <span id="countdown-measured-val" style="font-weight: 800; color: #78350f;">0.00</span> sec
+        </div>
+        <div style="color: #b45309; font-size: 13px; margin-top: 3px;">
+          Automatically saving report in <strong id="countdown-sec-text" style="font-size: 14px; color: #92400e;">10</strong> seconds...
+        </div>
+      </div>
     </div>
   </div>
 
@@ -627,9 +730,9 @@
       </h2>
       <div class="form-row-grid-3">
         <div class="field-box">
-          <label for="part_number" class="required">Part / Model Number</label>
-          <input type="text" id="part_number" name="part_number" value="1021F0001" placeholder="e.g. 1021F0001" required>
-          <div class="help">Component model code (e.g. 1021F0001 or 1021H0001-H).</div>
+          <label for="part_number" class="required">Coat Details</label>
+          <input type="text" id="part_number" name="part_number" value="Primer Coat" placeholder="e.g. Primer Coat" required>
+          <div class="help">Coating process details (e.g. Primer Coat or Paint Top Coat).</div>
         </div>
         <div class="field-box">
           <label for="operator_id" class="required">Operator ID</label>
@@ -646,7 +749,7 @@
 
     <!-- FIELDSET 2: PART A DETAILS -->
     <fieldset class="module">
-      <h2>2. PART A Material Specification</h2>
+      <h2>2. PART A Material Details</h2>
       <div class="form-row-grid-4">
         <div class="field-box">
           <label for="part_a_batch" class="required">Batch Number</label>
@@ -669,7 +772,7 @@
 
     <!-- FIELDSET 3: PART B DETAILS -->
     <fieldset class="module">
-      <h2>3. PART B Material Specification</h2>
+      <h2>3. PART B Material Details</h2>
       <div class="form-row-grid-4">
         <div class="field-box">
           <label for="part_b_batch" class="required">Batch Number</label>
@@ -692,7 +795,7 @@
 
     <!-- FIELDSET 4: THINNER DETAILS -->
     <fieldset class="module">
-      <h2>4. Thinner Specification</h2>
+      <h2>4. Thinner Details</h2>
       <div class="form-row-grid-4">
         <div class="field-box">
           <label for="thinner_batch">Batch Number</label>
@@ -713,54 +816,31 @@
       </div>
     </fieldset>
 
-    <!-- FIELDSET 5: VISCOSITY SPECIFICATIONS & MEASUREMENT -->
+    <!-- FIELDSET 5: VISCOSITY DETAILS & MEASUREMENT -->
     <fieldset class="module">
-      <h2>5. Viscosity Specifications & Actual Reading</h2>
+      <h2>5. Viscosity Details & Actual Reading</h2>
       <div class="form-row-grid-3">
         <div class="field-box">
-          <label for="min_viscosity" class="required">Min Specification</label>
+          <label for="min_viscosity" class="required">Min Viscosity Details</label>
           <input type="number" step="0.01" id="min_viscosity" name="min_viscosity" value="18.00" oninput="calculateResult()" required>
           <div class="help">Lower tolerance limit in seconds (sec).</div>
         </div>
         <div class="field-box">
-          <label for="max_viscosity" class="required">Max Specification</label>
+          <label for="max_viscosity" class="required">Max Viscosity Details</label>
           <input type="number" step="0.01" id="max_viscosity" name="max_viscosity" value="24.00" oninput="calculateResult()" required>
           <div class="help">Upper tolerance limit in seconds (sec).</div>
         </div>
         <div class="field-box">
           <label for="actual_viscosity" class="required" style="color: var(--primary);">Actual Value</label>
-          <input type="number" step="0.01" id="actual_viscosity" name="actual_viscosity" value="21.45" oninput="calculateResult()" style="font-weight:bold; border-color: var(--primary);" required>
-          <div class="help">Captured via Viscometer or entered manually.</div>
-        </div>
-      </div>
-
-      <!-- EVALUATION STRIP: CENTERED FIXED PASS/FAIL BADGE -->
-      <div class="eval-row-box">
-        <div class="eval-meta-item">
-          <span>Acceptable Range</span>
-          <span id="spec-range-label">18.00 — 24.00</span>
-        </div>
-        <div class="eval-meta-item" style="text-align: right;">
-          <span>Target Process</span>
-          <span id="eval-target-label">Primer Coat</span>
-        </div>
-        <div class="eval-center-badge-wrap">
-          <span class="eval-center-title">Overall Evaluation</span>
-          <div class="django-badge-large pass" id="eval-result-badge">PASS</div>
-          <span id="overall-status-text" style="font-size: 11px; font-weight: 600; color: #15803d; margin-top: 4px;">Pass</span>
+          <input type="number" step="0.01" id="actual_viscosity" name="actual_viscosity" value="" placeholder="Awaiting hardware..." style="font-weight:bold; border-color: var(--primary); background-color: #f8fafc; cursor: not-allowed;" readonly required>
+          <div class="help">Automatically populated from hardware telemetry.</div>
         </div>
       </div>
     </fieldset>
 
-    <!-- DJANGO SUBMIT ROW -->
-    <div class="submit-row">
-      <div style="margin-right: auto; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: #64748b;">Test Status:</span>
-        <span class="django-badge-large pass" id="eval-result-badge-sticky" style="font-size: 11px; padding: 3px 12px; min-width: auto;">PASS</span>
-      </div>
+    <!-- FORM ACTIONS: CLEAR FORM ONLY -->
+    <div class="submit-row" id="auto-submit-row" style="justify-content: flex-end;">
       <input type="button" value="Clear Form" class="closelink" onclick="resetFormDefaults()">
-      <input type="button" value="Save and add another" class="btn-secondary-green" onclick="submitAndReset()">
-      <input type="submit" value="Save & Generate Primer Coat Report (Excel & PDF)" class="default btn-submit-primer" id="btn-save-report">
     </div>
   </form>
 </div>
@@ -793,13 +873,23 @@
     const mobileSelect = document.getElementById('mobile-template-select');
     const formElem = document.getElementById('report-form');
     const s1Badge = document.getElementById('section1-mode-badge');
-    const btnSave = document.getElementById('btn-save-report');
+    const btnSave = document.getElementById('btn-manual-save');
+
+    // Cancel running countdown and reset saved state on coat switch
+    if (typeof cancelAutoSave === 'function') {
+      cancelAutoSave(false);
+    }
+    if (typeof resetSaveStateForCoatSwitch === 'function') {
+      resetSaveStateForCoatSwitch();
+    }
 
     if (mobileSelect && mobileSelect.value !== templateName) {
       mobileSelect.value = templateName;
     }
 
     if (templateName === 'Primer ') {
+      const topCard = document.getElementById('top-eval-card');
+      if (topCard) topCard.className = 'top-eval-card primer';
       if (tabPrimer) tabPrimer.className = 'django-tab active';
       if (tabPaint) tabPaint.className = 'django-tab';
       if (formElem) formElem.className = 'mode-primer';
@@ -808,8 +898,8 @@
         s1Badge.innerText = '🎨 Primer Coat';
       }
       if (btnSave) {
-        btnSave.value = 'Save & Generate Primer Coat Report (Excel & PDF)';
-        btnSave.className = 'default btn-submit-primer';
+        btnSave.style.background = '#d97706';
+        btnSave.style.borderColor = '#b45309';
       }
       if (targetLabel) {
         targetLabel.innerText = 'Primer Coat';
@@ -818,12 +908,19 @@
       if (mobileSelect) {
         mobileSelect.style.borderColor = '#f59e0b';
       }
+      const partInput = document.getElementById('part_number');
+      if (partInput) {
+        partInput.value = 'Primer Coat';
+        partInput.placeholder = 'e.g. Primer Coat';
+      }
       document.getElementById('min_viscosity').value = '18.00';
       document.getElementById('max_viscosity').value = '24.00';
       if (initialModeSet && typeof showToast === 'function') {
         showToast('Switched to Primer Coat (18.00 — 24.00 sec)', 'info');
       }
     } else {
+      const topCard = document.getElementById('top-eval-card');
+      if (topCard) topCard.className = 'top-eval-card paint';
       if (tabPaint) tabPaint.className = 'django-tab active';
       if (tabPrimer) tabPrimer.className = 'django-tab';
       if (formElem) formElem.className = 'mode-paint';
@@ -832,8 +929,8 @@
         s1Badge.innerText = '🖌️ Paint Top Coat';
       }
       if (btnSave) {
-        btnSave.value = 'Save & Generate Paint Top Coat Report (Excel & PDF)';
-        btnSave.className = 'default btn-submit-paint';
+        btnSave.style.background = '#2563eb';
+        btnSave.style.borderColor = '#1d4ed8';
       }
       if (targetLabel) {
         targetLabel.innerText = 'Paint Top Coat';
@@ -841,6 +938,11 @@
       }
       if (mobileSelect) {
         mobileSelect.style.borderColor = '#3b82f6';
+      }
+      const partInput = document.getElementById('part_number');
+      if (partInput) {
+        partInput.value = 'Paint Top Coat';
+        partInput.placeholder = 'e.g. Paint Top Coat';
       }
       document.getElementById('min_viscosity').value = '22.00';
       document.getElementById('max_viscosity').value = '28.00';
@@ -916,42 +1018,93 @@
   });
 
   let isInitialLoad = true;
+  let countdownTimer = null;
+  let countdownSeconds = 10;
+  let isSaving = false;
+  let lastSavedViscosity = null;
+  let lastSavedCoat = null;
+  let autoSaveCancelled = false;
+  let stationIsOnline = false;
+
+  function resetSaveStateForCoatSwitch() {
+    lastSavedViscosity = null;
+    lastSavedCoat = null;
+    autoSaveCancelled = false;
+    const banner = document.getElementById('countdown-banner');
+    if (banner) banner.style.display = 'none';
+    const sBanner = document.getElementById('save-success-banner');
+    if (sBanner) sBanner.style.display = 'none';
+    updateSubmitRowStatus('⏳ Awaiting Hardware Reading... (Auto-submits on measurement)', 'waiting');
+  }
+
   // Hook telemetry updates and incoming session sync to page
   function onTelemetryUpdate(station, isOnline, session) {
+    stationIsOnline = Boolean(isOnline);
+
     const banner = document.getElementById('telemetry-banner');
     const bannerStatus = document.getElementById('banner-status-txt');
     const bannerPill = document.getElementById('banner-status-pill');
     const bannerLiveVal = document.getElementById('banner-live-val');
+    const hwStatus = document.getElementById('top-hardware-status');
 
     if (bannerLiveVal && station.val !== undefined) {
       bannerLiveVal.innerText = station.val;
       currentLiveViscosity = station.val;
     }
 
-    if (banner) {
-      const liveWrap = document.getElementById('banner-live-wrap');
-      const captureBtn = document.getElementById('btn-capture-live');
-
-      if (isOnline) {
-        banner.className = 'django-banner online';
-        if (bannerPill) bannerPill.className = 'telemetry-status-pill online';
-        if (bannerStatus) bannerStatus.innerText = 'STATION ONLINE';
-        if (liveWrap) liveWrap.style.display = 'inline';
-        if (captureBtn) {
-          captureBtn.disabled = false;
-          captureBtn.style.opacity = '1';
-          captureBtn.style.cursor = 'pointer';
-        }
-      } else {
+    // STRICT OFFLINE GUARD: Never auto-capture or auto-save when station is OFFLINE!
+    if (!stationIsOnline) {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        const cBanner = document.getElementById('countdown-banner');
+        if (cBanner) cBanner.style.display = 'none';
+        showToast('Station is OFFLINE. Auto-save cancelled.', 'warning');
+      }
+      if (hwStatus) {
+        hwStatus.innerHTML = '<span style="color: #ef4444; font-weight: 700;">● Station OFFLINE (Auto-save disabled)</span>';
+      }
+      if (banner) {
         banner.className = 'django-banner offline';
         if (bannerPill) bannerPill.className = 'telemetry-status-pill offline';
         if (bannerStatus) bannerStatus.innerText = 'STATION OFFLINE';
+        const liveWrap = document.getElementById('banner-live-wrap');
         if (liveWrap) liveWrap.style.display = 'none';
-        if (captureBtn) {
-          captureBtn.disabled = true;
-          captureBtn.style.opacity = '0.5';
-          captureBtn.style.cursor = 'not-allowed';
-        }
+      }
+      return; // STOP EXECUTION: Do not parse reading or trigger auto-save when offline!
+    }
+
+    // STATION IS ONLINE
+    if (hwStatus) {
+      hwStatus.innerHTML = '<span style="color: #16a34a; font-weight: 700;">● Station ONLINE (Live Telemetry)</span>';
+    }
+    if (banner) {
+      banner.className = 'django-banner online';
+      if (bannerPill) bannerPill.className = 'telemetry-status-pill online';
+      if (bannerStatus) bannerStatus.innerText = 'STATION ONLINE';
+      const liveWrap = document.getElementById('banner-live-wrap');
+      if (liveWrap) liveWrap.style.display = 'inline';
+    }
+
+    // AUTOMATIC HARDWARE CAPTURE & AUTO-SUBMIT TRIGGER (ONLINE ONLY)
+    const liveVal = parseFloat(station.val);
+    if (!isNaN(liveVal) && liveVal > 0) {
+      const formatted = liveVal.toFixed(2);
+      const actualInput = document.getElementById('actual_viscosity');
+      const coat = document.getElementById('process_type').value;
+
+      if (actualInput && actualInput.value !== formatted) {
+        actualInput.value = formatted;
+        actualInput.style.transition = 'background-color 0.4s ease';
+        actualInput.style.backgroundColor = '#dcfce7';
+        setTimeout(() => { actualInput.style.backgroundColor = ''; }, 1200);
+        broadcastFormChange('actual_viscosity', formatted);
+      }
+      calculateResult();
+
+      // Trigger 10-second automatic save countdown ONLY when station is strictly ONLINE
+      if (!isSaving && !countdownTimer && !autoSaveCancelled && (lastSavedViscosity !== formatted || lastSavedCoat !== coat)) {
+        startAutoSaveCountdown(10, formatted);
       }
     }
 
@@ -976,23 +1129,113 @@
     }
   }
 
-  function captureLiveValue() {
-    const liveVal = parseFloat(currentLiveViscosity);
-    if (!isNaN(liveVal) && liveVal > 0) {
-      const formatted = liveVal.toFixed(2);
-      const actualInput = document.getElementById('actual_viscosity');
-      if (actualInput) {
-        actualInput.value = formatted;
-        actualInput.style.transition = 'background-color 0.4s ease';
-        actualInput.style.backgroundColor = '#dcfce7';
-        setTimeout(() => { actualInput.style.backgroundColor = ''; }, 1200);
+  function startAutoSaveCountdown(seconds = 10, measuredVal = null) {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownSeconds = seconds;
+    autoSaveCancelled = false;
+
+    const val = measuredVal || document.getElementById('actual_viscosity').value;
+    const cBanner = document.getElementById('countdown-banner');
+    const cCircle = document.getElementById('countdown-circle');
+    const cVal = document.getElementById('countdown-measured-val');
+    const cSecText = document.getElementById('countdown-sec-text');
+    const sBanner = document.getElementById('save-success-banner');
+    if (sBanner) sBanner.style.display = 'none';
+
+    if (cVal) cVal.innerText = val;
+    if (cCircle) cCircle.innerText = countdownSeconds;
+    if (cSecText) cSecText.innerText = countdownSeconds;
+    if (cBanner) cBanner.style.display = 'flex';
+
+    updateSubmitRowStatus(`⏱️ Auto-saving in ${countdownSeconds}s... (Hardware measurement received)`, 'counting');
+
+    countdownTimer = setInterval(() => {
+      countdownSeconds--;
+      if (cCircle) cCircle.innerText = countdownSeconds;
+      if (cSecText) cSecText.innerText = countdownSeconds;
+      updateSubmitRowStatus(`⏱️ Auto-saving in ${countdownSeconds}s... (Hardware measurement received)`, 'counting');
+
+      if (countdownSeconds <= 0) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        if (cBanner) cBanner.style.display = 'none';
+        submitReport();
       }
-      broadcastFormChange('actual_viscosity', formatted);
-      showToast(`Captured live viscosity: ${formatted} sec`, 'success');
-      calculateResult();
-    } else {
-      showToast('No active reading from station yet. Run a test first.', 'error');
+    }, 1000);
+  }
+
+  function cancelAutoSave(showNotification = true) {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
     }
+    autoSaveCancelled = true;
+    const cBanner = document.getElementById('countdown-banner');
+    if (cBanner) cBanner.style.display = 'none';
+    updateSubmitRowStatus('⏸️ Auto-save paused.', 'cancelled');
+    if (showNotification && typeof showToast === 'function') {
+      showToast('Auto-save paused. You can adjust details.', 'info');
+    }
+  }
+
+  function triggerImmediateSave() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    const cBanner = document.getElementById('countdown-banner');
+    if (cBanner) cBanner.style.display = 'none';
+    submitReport();
+  }
+
+  function updateSubmitRowStatus(text, state) {
+    const textEl = document.getElementById('auto-status-text');
+    const dotEl = document.getElementById('auto-status-dot');
+    const indEl = document.getElementById('auto-status-indicator');
+    if (!textEl) return;
+
+    textEl.innerText = text;
+    if (state === 'counting') {
+      if (indEl) { indEl.style.background = '#fef3c7'; indEl.style.color = '#92400e'; indEl.style.border = '1px solid #fde68a'; }
+      if (dotEl) { dotEl.style.background = '#f59e0b'; }
+    } else if (state === 'saving') {
+      if (indEl) { indEl.style.background = '#dbeafe'; indEl.style.color = '#1e40af'; indEl.style.border = '1px solid #bfdbfe'; }
+      if (dotEl) { dotEl.style.background = '#2563eb'; }
+    } else if (state === 'saved') {
+      if (indEl) { indEl.style.background = '#dcfce7'; indEl.style.color = '#15803d'; indEl.style.border = '1px solid #bbf7d0'; }
+      if (dotEl) { dotEl.style.background = '#16a34a'; }
+    } else if (state === 'cancelled') {
+      if (indEl) { indEl.style.background = '#f1f5f9'; indEl.style.color = '#475569'; indEl.style.border = '1px solid #cbd5e1'; }
+      if (dotEl) { dotEl.style.background = '#94a3b8'; }
+    } else if (state === 'error') {
+      if (indEl) { indEl.style.background = '#fee2e2'; indEl.style.color = '#991b1b'; indEl.style.border = '1px solid #fecaca'; }
+      if (dotEl) { dotEl.style.background = '#dc2626'; }
+    } else {
+      if (indEl) { indEl.style.background = '#e2e8f0'; indEl.style.color = '#475569'; indEl.style.border = 'none'; }
+      if (dotEl) { dotEl.style.background = '#3b82f6'; }
+    }
+  }
+
+  function showSaveSuccessBanner(data) {
+    const sBanner = document.getElementById('save-success-banner');
+    const sTitle = document.getElementById('save-success-title');
+    if (sBanner) {
+      if (sTitle) sTitle.innerText = `Report #${data.id} Saved Successfully! Result: ${data.result.toUpperCase()}`;
+      sBanner.style.display = 'flex';
+      sBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function prepareNextTest() {
+    const sBanner = document.getElementById('save-success-banner');
+    if (sBanner) sBanner.style.display = 'none';
+    lastSavedViscosity = null;
+    lastSavedCoat = null;
+    autoSaveCancelled = false;
+    document.getElementById('part_a_batch').value = '';
+    document.getElementById('part_b_batch').value = '';
+    updateSubmitRowStatus('⏳ Awaiting Hardware Reading... (Auto-submits on measurement)', 'waiting');
+    showToast('Ready for next test coat measurement.', 'info');
   }
 
   function calculateResult() {
@@ -1000,46 +1243,60 @@
     const max = parseFloat(document.getElementById('max_viscosity').value);
     const actual = parseFloat(document.getElementById('actual_viscosity').value);
 
-    document.getElementById('spec-range-label').innerText = `${min.toFixed(2)} — ${max.toFixed(2)}`;
-
     const badge = document.getElementById('eval-result-badge');
-    const stickyBadge = document.getElementById('eval-result-badge-sticky');
-    const statusText = document.getElementById('overall-status-text');
 
-    if (!isNaN(min) && !isNaN(max) && !isNaN(actual)) {
+    if (!isNaN(min) && !isNaN(max) && !isNaN(actual) && actual > 0) {
       const isPass = (actual >= min && actual <= max);
-      const resClass = isPass ? 'django-badge-large pass' : 'django-badge-large fail';
-      const resText = isPass ? 'PASS' : 'FAIL';
-
       if (badge) {
-        badge.className = resClass;
-        badge.innerText = resText;
+        badge.className = isPass ? 'top-badge pass' : 'top-badge fail';
+        badge.style.background = isPass ? '#15803d' : '#dc2626';
+        badge.style.color = '#ffffff';
+        badge.innerText = isPass ? 'PASS' : 'FAIL';
       }
-      if (stickyBadge) {
-        stickyBadge.className = resClass;
-        stickyBadge.innerText = resText;
-        stickyBadge.style.fontSize = '11px';
-        stickyBadge.style.padding = '3px 12px';
-        stickyBadge.style.minWidth = 'auto';
-      }
-      if (statusText) {
-        statusText.innerText = isPass ? 'In Tolerance (Pass)' : 'Out of Tolerance (Fail)';
-        statusText.style.color = isPass ? '#15803d' : '#b91c1c';
+    } else {
+      if (badge) {
+        badge.className = 'top-badge waiting';
+        badge.style.background = '#e2e8f0';
+        badge.style.color = '#475569';
+        badge.innerText = 'WAITING';
       }
     }
   }
   calculateResult();
 
   function resetFormDefaults() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    const cBanner = document.getElementById('countdown-banner');
+    if (cBanner) cBanner.style.display = 'none';
+    const sBanner = document.getElementById('save-success-banner');
+    if (sBanner) sBanner.style.display = 'none';
+    lastSavedViscosity = null;
+    lastSavedCoat = null;
+    autoSaveCancelled = false;
+
     document.getElementById('report-form').reset();
     initDefaultDates();
     selectTemplate('Primer ');
+    updateSubmitRowStatus('⏳ Awaiting Hardware Reading... (Auto-submits on measurement)', 'waiting');
   }
 
   async function submitReport() {
-    const btn = document.getElementById('btn-save-report');
-    btn.disabled = true;
-    btn.value = 'Saving & Exporting PDF...';
+    if (isSaving) return;
+    if (!stationIsOnline) {
+      showToast('Cannot save report: Viscometer station is currently OFFLINE.', 'error');
+      return;
+    }
+    isSaving = true;
+
+    const btn = document.getElementById('btn-manual-save');
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+    }
+    updateSubmitRowStatus('💾 Saving & generating reports (Excel & PDF)...', 'saving');
 
     const payload = {
       process_type: document.getElementById('process_type').value,
@@ -1077,24 +1334,26 @@
       });
       const data = await res.json();
       if (data.success) {
+        lastSavedViscosity = document.getElementById('actual_viscosity').value;
+        lastSavedCoat = document.getElementById('process_type').value;
+
         showToast(`Report saved! Result: ${data.result.toUpperCase()} | Saved to Reports 2026/`, 'success');
+        showSaveSuccessBanner(data);
+        updateSubmitRowStatus(`✅ Report #${data.id} Saved (${data.result.toUpperCase()})`, 'saved');
       } else {
         showToast(`Error: ${data.error || 'Unable to save report'}`, 'error');
+        updateSubmitRowStatus(`❌ Save Failed: ${data.error || 'Error'}`, 'error');
       }
     } catch (err) {
       showToast(`Server communication error: ${err}`, 'error');
+      updateSubmitRowStatus('❌ Connection error while saving', 'error');
     } finally {
-      btn.disabled = false;
-      btn.value = 'Save & Generate Report (Excel & PDF)';
+      isSaving = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
     }
-  }
-
-  function submitAndReset() {
-    submitReport().then(() => {
-      document.getElementById('part_number').value = '';
-      document.getElementById('part_a_batch').value = '';
-      document.getElementById('part_b_batch').value = '';
-    });
   }
 
   // Two-way sync operator ID with navbar & localStorage

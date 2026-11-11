@@ -40,6 +40,15 @@ try:
 except ImportError:
     HAS_WIN32COM = False
 
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    HAS_REPORTLAB = True
+except ImportError:
+    HAS_REPORTLAB = False
+
 # ================================================================
 # ENVIRONMENT CONFIGURATION
 # ================================================================
@@ -59,14 +68,20 @@ except ImportError:
                     _k, _v = _line.split("=", 1)
                     os.environ.setdefault(_k.strip(), _v.strip().strip("'\""))
 
+# On Windows, MSVCRT does not support IANA timezone strings (e.g., 'Asia/Kolkata').
+# If TZ is set to an IANA string on Windows, the C runtime defaults to UTC (5:30 hrs behind IST).
+# Removing TZ on Windows allows Python and MSVCRT to use the host system's live local clock.
+if platform.system() == "Windows" and "TZ" in os.environ:
+    del os.environ["TZ"]
+
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
 DEBUG = os.environ.get("FLASK_DEBUG", "0").lower() in ("1", "true", "yes")
-HOST = os.environ.get("HOST", "0.0.0.0")
+HOST = os.environ.get("HOST", "192.168.161.140")
 PORT = int(os.environ.get("PORT", "5001"))
 UDP_IP = os.environ.get("UDP_IP", "0.0.0.0")
-UDP_PORT = int(os.environ.get("UDP_PORT", "63363"))
+UDP_PORT = int(os.environ.get("UDP_PORT", "5002"))
 OFFLINE_TIMEOUT = int(os.environ.get("OFFLINE_TIMEOUT", "30"))
 STATION_NAME = os.environ.get("STATION_NAME", "Walvoil Viscosity Testing Station")
 
@@ -77,6 +92,11 @@ else:
     DB_PATH = _raw_db
 
 TEMPLATE_EXCEL_PATH = os.path.join(BASE_DIR, "Viscosity report.xlsx")
+
+# Save Reports folder in the parent directory outside the root project folder (e.g., Documents/Reports)
+DEFAULT_REPORTS_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "Reports"))
+REPORTS_DIR = os.environ.get("REPORTS_DIR", DEFAULT_REPORTS_DIR)
+os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # ================================================================
 # INDUSTRIAL LOGGING SYSTEM (Rotating File + Console)
@@ -147,44 +167,14 @@ except (ValueError, AttributeError):
     pass
 
 def clean_udp_port(port: int):
-    """Frees UDP port on Windows/Linux from any orphaned python processes."""
-    own_pid = os.getpid()
-    parent_pid = os.getppid() if hasattr(os, 'getppid') else None
+    """Non-destructive UDP port readiness check. Does not kill external processes."""
+    test_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        if platform.system().lower() == "windows":
-            result = subprocess.check_output(
-                "netstat -ano -p UDP", shell=True
-            ).decode(errors="ignore")
-            for line in result.strip().splitlines():
-                parts = line.strip().split()
-                # Format: UDP  0.0.0.0:63363  *:*  1234
-                if len(parts) >= 4 and f":{port}" in parts[1]:
-                    try:
-                        pid = int(parts[-1])
-                        if pid > 4 and pid not in (own_pid, parent_pid):
-                            subprocess.call(
-                                f"taskkill /F /PID {pid}",
-                                shell=True,
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL
-                            )
-                            logger.info(f"[STARTUP] Cleaned orphaned process PID {pid} holding UDP port {port}")
-                    except ValueError:
-                        continue
-        else:
-            result = subprocess.check_output(
-                ["fuser", f"{port}/udp"], stderr=subprocess.DEVNULL
-            ).decode(errors="ignore")
-            for pid_str in result.strip().split():
-                try:
-                    pid = int(pid_str)
-                    if pid > 1 and pid not in (own_pid, parent_pid):
-                        os.kill(pid, 9)
-                        logger.info(f"[STARTUP] Cleaned orphaned process PID {pid} holding port {port}")
-                except ValueError:
-                    continue
-    except Exception as e:
-        logger.debug(f"[PORT CLEAN] {e}")
+        test_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        test_sock.bind((UDP_IP, port))
+        test_sock.close()
+    except OSError:
+        logger.warning(f"[PORT CHECK] UDP port {port} appears currently in use.")
 
 def diagnose_port_status(port: int):
     """Non-destructive diagnostic check. Warns if a port appears already occupied."""
@@ -336,12 +326,16 @@ def safe_float(val, default: float = 0.0) -> float:
     except (ValueError, TypeError):
         return default
 
-def is_safe_path(target_path: str, base_dir: str = BASE_DIR) -> bool:
-    """Verifies that target_path strictly resolves within base_dir to avoid directory traversal."""
+def is_safe_path(target_path: str) -> bool:
+    """Verifies that target_path strictly resolves within BASE_DIR or REPORTS_DIR to avoid directory traversal."""
     try:
         target_abs = os.path.abspath(target_path)
-        base_abs = os.path.abspath(base_dir)
-        return os.path.commonpath([target_abs, base_abs]) == base_abs
+        base_abs = os.path.abspath(BASE_DIR)
+        reports_abs = os.path.abspath(REPORTS_DIR)
+        return (
+            os.path.commonpath([target_abs, base_abs]) == base_abs
+            or os.path.commonpath([target_abs, reports_abs]) == reports_abs
+        )
     except Exception:
         return False
 
@@ -536,8 +530,13 @@ def generate_and_save_report(report_data: dict) -> dict:
     ws["C7"] = date_str
     ws["H7"] = operator_id
     ws["C8"] = shift
-    ws["F8"] = "Part / Model No "
+    ws["F8"] = "Coat Details"
     ws["H8"] = part_number
+
+    # Section headers: rename Specification to Details
+    ws["A18"] = "PART A Material Details"
+    ws["A24"] = "PART B Material Details"
+    ws["A100"] = "Thinner Details"
 
     # PART A (Row 19 - 22)
     ws["G19"] = str(part_a.get("batch", ""))
@@ -564,28 +563,29 @@ def generate_and_save_report(report_data: dict) -> dict:
     ws.cell(row=108, column=10, value=result_str)
 
     # Resolve folder hierarchy
-    report_folder   = "Reports"
     year_folder     = f"Reports {now.year}"
     month_folder    = now.strftime('%B')
     day_folder      = f"{now.day}_{now.strftime('%B')}_{now.year}"
     template_folder = "Primer Coat" if sheet_target == "Primer " else "Paint Top Coat"
     status_folder   = "Test Pass" if is_pass else "Test Fail"
 
-    excel_dir = os.path.join(BASE_DIR, report_folder, year_folder, month_folder, day_folder, template_folder, status_folder, "Excel Report")
-    pdf_dir   = os.path.join(BASE_DIR, report_folder, year_folder, month_folder, day_folder, template_folder, status_folder, "Pdf Report")
+    excel_dir = os.path.join(REPORTS_DIR, year_folder, month_folder, day_folder, template_folder, status_folder, "Excel Report")
+    pdf_dir   = os.path.join(REPORTS_DIR, year_folder, month_folder, day_folder, template_folder, status_folder, "Pdf Report")
     os.makedirs(excel_dir, exist_ok=True)
     os.makedirs(pdf_dir, exist_ok=True)
 
-    # Resolve filename: <Part_Number>_<PartA_Batch>_<PartB_Batch>.xlsx / .pdf
-    clean_part = re.sub(r'[^A-Za-z0-9_-]', '', part_number) or "1021F0001"
-    clean_a    = re.sub(r'[^A-Za-z0-9_-]', '', str(part_a.get("batch", ""))) or "BATCHA"
-    clean_b    = re.sub(r'[^A-Za-z0-9_-]', '', str(part_b.get("batch", ""))) or "BATCHB"
-    base_name  = f"{clean_part}_{clean_a}_{clean_b}"
+    # Resolve filename based strictly on the used sheet name with sequential n+1 numbering:
+    # e.g., primer_coat_1, primer_coat_2, ..., primer_coat_n
+    prefix = "primer_coat" if sheet_target == "Primer " else "paint_top_coat"
+    existing_nums = []
+    num_pattern = re.compile(rf"^{re.escape(prefix)}_(\d+)\.xlsx$", re.IGNORECASE)
+    for fname in os.listdir(excel_dir):
+        m = num_pattern.match(fname)
+        if m:
+            existing_nums.append(int(m.group(1)))
 
-    # Ensure unique filename if repeated in the same minute
-    test_excel_path = os.path.join(excel_dir, f"{base_name}.xlsx")
-    if os.path.exists(test_excel_path):
-        base_name = f"{base_name}_{now.strftime('%H%M%S')}"
+    next_idx = max(existing_nums) + 1 if existing_nums else 1
+    base_name = f"{prefix}_{next_idx}"
 
     excel_filename = f"{base_name}.xlsx"
     pdf_filename   = f"{base_name}.pdf"
@@ -610,10 +610,171 @@ def generate_and_save_report(report_data: dict) -> dict:
     wb.close()
 
     # Generate PDF report:
-    # 1. Windows: Thread-Safe Native Excel COM Automation
-    # 2. Linux: Headless LibreOffice CLI export
+    # 1. Primary Engine: ReportLab (100% pure Python, zero dependencies, works reliably under NSSM Windows Services)
+    # 2. Secondary Engine: Native Windows Excel COM Automation (if ReportLab unavailable)
+    # 3. Linux Fallback: Headless LibreOffice CLI export
     pdf_generated = False
-    if HAS_WIN32COM and platform.system().lower() == "windows":
+
+    if HAS_REPORTLAB:
+        try:
+            doc = SimpleDocTemplate(
+                pdf_path,
+                pagesize=letter,
+                leftMargin=19,
+                rightMargin=19,
+                topMargin=20,
+                bottomMargin=20
+            )
+            elements = []
+
+            # 1. Header Banner Table: Logo on Left, Title on Right (IN THE SAME ROW)
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle(
+                'DocTitle',
+                parent=styles['Normal'],
+                fontName='Helvetica-Bold',
+                fontSize=18,
+                alignment=1, # Center aligned
+                textColor=colors.HexColor('#0f172a'),
+                leading=22
+            )
+
+            logo_path = os.path.join(BASE_DIR, "static", "logo.jpg")
+            logo_img = RLImage(logo_path, width=170, height=38) if os.path.exists(logo_path) else ''
+            title_p = Paragraph('VISCOSITY TEST REPORT', title_style)
+
+            # Col 1: 170 pt (logo), Col 2: 404 pt (title) = 574 pt full printable width
+            banner_table = Table([[logo_img, title_p]], colWidths=[170, 404])
+            banner_table.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('ALIGN', (0,0), (0,0), 'LEFT'),
+                ('ALIGN', (1,0), (1,0), 'CENTER'),
+                ('TOPPADDING', (0,0), (-1,-1), 0),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 14),
+            ]))
+            elements.append(banner_table)
+
+            # 2. Key Metadata Block (Rows 6 - 8 of Excel)
+            is_pass = (result_str.strip().lower() == "pass")
+            res_color = colors.HexColor('#15803d') if is_pass else colors.HexColor('#b91c1c')
+            proc_title = "Primer Coat" if sheet_target == "Primer " else "Paint Top Coat"
+
+            gray_bg = colors.HexColor('#F2F2F2')
+            border_color = colors.HexColor('#E5E7EB')
+
+            hdr_data = [
+                ['Process:', proc_title, 'Result:', result_str],
+                ['Date and Time:', date_str, 'Operator ID:', operator_id],
+                ['Shift:', shift, 'Coat Details:', part_number]
+            ]
+            hdr_table = Table(hdr_data, colWidths=[112, 175, 112, 175])
+            hdr_table.setStyle(TableStyle([
+                ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), 10),
+                ('BACKGROUND', (1,0), (1,-1), gray_bg),
+                ('BACKGROUND', (3,0), (3,-1), gray_bg),
+                ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+                ('TEXTCOLOR', (3,0), (3,0), res_color),
+                ('TOPPADDING', (0,0), (-1,-1), 7),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 7),
+                ('LEFTPADDING', (0,0), (-1,-1), 6),
+                ('RIGHTPADDING', (0,0), (-1,-1), 6),
+                ('INNERGRID', (0,0), (-1,-1), 0.75, border_color),
+                ('BOX', (0,0), (-1,-1), 1, border_color),
+            ]))
+            elements.append(hdr_table)
+            elements.append(Spacer(1, 14))
+
+            # 3. Section table builder (Cyan Header, Gray Label col, Light Gray Value col matching Excel)
+            cyan_bg = colors.HexColor('#00F0EA')
+            label_bg = colors.HexColor('#D0CFCF')
+
+            def make_section(title, rows):
+                sec_rows = [[title, '']]
+                for r in rows:
+                    sec_rows.append(r)
+                t = Table(sec_rows, colWidths=[331, 243])
+                t.setStyle(TableStyle([
+                    ('SPAN', (0,0), (1,0)),
+                    ('BACKGROUND', (0,0), (1,0), cyan_bg),
+                    ('FONTNAME', (0,0), (1,0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0,0), (1,0), 10),
+                    ('BACKGROUND', (0,1), (0,-1), label_bg),
+                    ('BACKGROUND', (1,1), (1,-1), gray_bg),
+                    ('FONTNAME', (0,1), (-1,-1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0,1), (-1,-1), 9),
+                    ('TOPPADDING', (0,0), (-1,-1), 5),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+                    ('LEFTPADDING', (0,0), (-1,-1), 8),
+                    ('RIGHTPADDING', (0,0), (-1,-1), 8),
+                    ('INNERGRID', (0,0), (-1,-1), 0.75, border_color),
+                    ('BOX', (0,0), (-1,-1), 1, border_color),
+                ]))
+                return t
+
+            # Part A
+            elements.append(make_section('PART A Material Details', [
+                ['Batch Number :', str(part_a.get("batch", ""))],
+                ['Manufacturing Date :', str(part_a.get("mfg", ""))],
+                ['Expiry Date :', str(part_a.get("exp", ""))],
+                ['In Take Quantity :', str(part_a.get("qty", ""))]
+            ]))
+            elements.append(Spacer(1, 14))
+
+            # Part B
+            elements.append(make_section('PART B Material Details', [
+                ['Batch Number :', str(part_b.get("batch", ""))],
+                ['Manufacturing Date :', str(part_b.get("mfg", ""))],
+                ['Expiry Date :', str(part_b.get("exp", ""))],
+                ['In Take Quantity :', str(part_b.get("qty", ""))]
+            ]))
+            elements.append(Spacer(1, 14))
+
+            # Thinner
+            elements.append(make_section('Thinner Details', [
+                ['Batch Number :', str(thinner.get("batch", ""))],
+                ['Manufacturing Date :', str(thinner.get("mfg", ""))],
+                ['Expiry Date :', str(thinner.get("exp", ""))],
+                ['In Take Quantity :', str(thinner.get("qty", ""))]
+            ]))
+            elements.append(Spacer(1, 14))
+
+            # 4. Viscosity Measurement Block
+            visc_rows = [
+                ['Viscosity', '', '', '', ''],
+                ['', 'Min', 'Max', 'Actual', 'Result'],
+                ['Viscosity', f"{min_visc:.2f}", f"{max_visc:.2f}", f"{actual_visc:.2f}", result_str]
+            ]
+            visc_table = Table(visc_rows, colWidths=[330, 61, 61, 61, 61])
+            visc_table.setStyle(TableStyle([
+                ('SPAN', (0,0), (-1,0)),
+                ('BACKGROUND', (0,0), (-1,0), cyan_bg),
+                ('BACKGROUND', (0,1), (-1,1), label_bg),
+                ('BACKGROUND', (0,2), (0,2), label_bg),
+                ('BACKGROUND', (1,2), (-1,2), gray_bg),
+                ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (0,0), 10),
+                ('FONTSIZE', (0,1), (-1,-1), 9),
+                ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+                ('TEXTCOLOR', (4,2), (4,2), res_color),
+                ('TOPPADDING', (0,0), (-1,-1), 5),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+                ('LEFTPADDING', (0,0), (-1,-1), 8),
+                ('RIGHTPADDING', (0,0), (-1,-1), 8),
+                ('INNERGRID', (0,0), (-1,-1), 0.75, border_color),
+                ('BOX', (0,0), (-1,-1), 1, border_color),
+            ]))
+            elements.append(visc_table)
+
+            doc.build(elements)
+            pdf_generated = os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 1000
+            if pdf_generated:
+                logger.info(f"[PDF REPORTLAB] High-fidelity PDF generated at {pdf_path}")
+        except Exception as rl_err:
+            logger.error(f"[PDF REPORTLAB ERROR] {rl_err}")
+
+    # Fallback to Excel COM if ReportLab failed on Windows
+    if not pdf_generated and HAS_WIN32COM and platform.system().lower() == "windows":
         with excel_com_lock:
             excel_app = None
             wb_com = None
@@ -657,7 +818,7 @@ def generate_and_save_report(report_data: dict) -> dict:
                     pythoncom.CoUninitialize()
                 except Exception:
                     pass
-    elif platform.system().lower() != "windows":
+    elif not pdf_generated and platform.system().lower() != "windows":
         try:
             out_dir = os.path.dirname(os.path.abspath(pdf_path))
             cmd = ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", out_dir, os.path.abspath(excel_path)]
@@ -809,7 +970,7 @@ def api_save_report():
         # Validate mandatory field presence
         part_number = str(report_data.get("part_number", "")).strip()
         if not part_number:
-            return jsonify({"success": False, "error": "Part / Model Number is required."}), 400
+            return jsonify({"success": False, "error": "Coat Details is required."}), 400
 
         result = generate_and_save_report(report_data)
         return jsonify({
@@ -859,7 +1020,7 @@ def api_download(report_id: int, file_type: str):
         return abort(404, f"Requested {file_type} file does not exist on disk.")
 
     # Guard against arbitrary path traversal
-    if not is_safe_path(target_path, BASE_DIR):
+    if not is_safe_path(target_path):
         logger.warning(f"[SECURITY WARNING] Path traversal blocked: {target_path}")
         return abort(403, "Access to the requested file path is forbidden.")
 
@@ -936,9 +1097,9 @@ def download_reports_archive():
     with zipfile.ZipFile(mem, 'w', zipfile.ZIP_DEFLATED) as zf:
         for pdf_path, excel_path, part_num, created_at in rows:
             for file_path in [pdf_path, excel_path]:
-                if file_path and os.path.exists(file_path) and is_safe_path(file_path, BASE_DIR):
+                if file_path and os.path.exists(file_path) and is_safe_path(file_path):
                     try:
-                        arcname = os.path.relpath(file_path, BASE_DIR)
+                        arcname = os.path.relpath(file_path, os.path.dirname(REPORTS_DIR))
                     except ValueError:
                         arcname = os.path.basename(file_path)
                     
@@ -950,10 +1111,6 @@ def download_reports_archive():
     mem.seek(0)
     filename = f"Archived_Reports_{start_date}_to_{end_date}.zip" if start_date and end_date else "Archived_Reports_All.zip"
     return send_file(mem, mimetype="application/zip", as_attachment=True, download_name=filename)
-
-# Always initialize background telemetry threads when imported by WSGI (Waitress/Gunicorn)
-if not _services_started and __name__ != '__main__':
-    start_background_services()
 
 # ================================================================
 # PRODUCTION ENTRY POINT
