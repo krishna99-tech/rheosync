@@ -39,7 +39,7 @@ RUN mkdir -p /app/Reports /app/logs
 
 # Expose Web Interface (TCP) and IoT Telemetry Receiver (UDP)
 EXPOSE 5001/tcp
-EXPOSE 63363/udp
+EXPOSE 5002/udp
 
 # Container Healthcheck (pings internal diagnostics API every 30 seconds)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

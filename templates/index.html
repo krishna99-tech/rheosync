@@ -451,6 +451,13 @@
     color: #475569;
     border: 1px solid #cbd5e1;
   }
+  .top-badge.listening {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+    animation: listening-pulse 1.3s infinite ease-in-out;
+  }
   .top-badge.pass {
     background: #15803d;
     color: #ffffff;
@@ -460,6 +467,44 @@
     background: #dc2626;
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+  }
+  .btn-start-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 24px;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    background: #16a34a;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+    transition: all 0.2s ease;
+  }
+  .btn-start-action:hover {
+    background: #15803d;
+    box-shadow: 0 4px 10px rgba(22, 163, 74, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-start-action.listening {
+    background: #d97706;
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.3);
+    animation: listening-pulse 1.3s infinite ease-in-out;
+  }
+  .btn-start-action.listening:hover {
+    background: #b45309;
+  }
+  .btn-start-action.captured {
+    background: #2563eb;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  }
+  @keyframes listening-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
   }
   .top-eval-subtext {
     font-size: 11px;
@@ -697,10 +742,18 @@
   </div>
 
 
-  <!-- PASS / FAIL STATUS ONLY -->
-  <div class="top-status-bar" id="top-eval-card" style="display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 20px; background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
-    <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;">Status:</span>
-    <div class="top-badge waiting" id="eval-result-badge" style="font-size: 18px; font-weight: 900; letter-spacing: 1.5px; padding: 6px 32px; border-radius: 6px; text-align: center; min-width: 130px; transition: all 0.25s ease;">WAITING</div>
+  <!-- PASS / FAIL STATUS & START TEST ACTION ROW -->
+  <div class="top-status-bar" id="top-eval-card" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 12px 24px; background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;">Status:</span>
+      <div class="top-badge waiting" id="eval-result-badge" style="font-size: 18px; font-weight: 900; letter-spacing: 1.5px; padding: 6px 28px; border-radius: 6px; text-align: center; min-width: 130px; transition: all 0.25s ease;">WAITING</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button type="button" id="btn-start-test" class="btn-start-action" onclick="toggleTestListening()" title="Acknowledge and listen for latest viscometer hardware measurement">
+        <span id="start-btn-icon">▶</span>
+        <span id="start-btn-text">Start Test</span>
+      </button>
+    </div>
   </div>
 
   <!-- 10-SECOND AUTOMATIC SAVING COUNTDOWN NOTIFICATION BANNER -->
@@ -749,7 +802,16 @@
 
     <!-- FIELDSET 2: PART A DETAILS -->
     <fieldset class="module">
-      <h2>2. PART A Material Details</h2>
+      <h2 style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <span style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span>2. PART A Material Details</span>
+          <span style="display: inline-flex; align-items: center; font-size: 15px; font-weight: 700; color: #1e293b;">
+            (
+            <input type="text" id="part_a_name" name="part_a_name" placeholder="No:" style="height: 28px; min-width: 130px; max-width: 220px; text-align: center; padding: 2px 10px; font-size: 13.5px; font-weight: 800; color: #1e293b; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 4px; margin: 0 4px;" title="Material / Code / Number (letters, numbers, dashes allowed)">
+            )
+          </span>
+        </span>
+      </h2>
       <div class="form-row-grid-4">
         <div class="field-box">
           <label for="part_a_batch" class="required">Batch Number</label>
@@ -772,7 +834,16 @@
 
     <!-- FIELDSET 3: PART B DETAILS -->
     <fieldset class="module">
-      <h2>3. PART B Material Details</h2>
+      <h2 style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <span style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span>3. PART B Material Details</span>
+          <span style="display: inline-flex; align-items: center; font-size: 15px; font-weight: 700; color: #1e293b;">
+            (
+            <input type="text" id="part_b_name" name="part_b_name" placeholder="e.g. 10539-B" style="height: 28px; min-width: 130px; max-width: 220px; text-align: center; padding: 2px 10px; font-size: 13.5px; font-weight: 800; color: #1e293b; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 4px; margin: 0 4px;" title="Material / Code / Number (letters, numbers, dashes allowed)">
+            )
+          </span>
+        </span>
+      </h2>
       <div class="form-row-grid-4">
         <div class="field-box">
           <label for="part_b_batch" class="required">Batch Number</label>
@@ -795,7 +866,16 @@
 
     <!-- FIELDSET 4: THINNER DETAILS -->
     <fieldset class="module">
-      <h2>4. Thinner Details</h2>
+      <h2 style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <span style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span>4. Thinner Details</span>
+          <span style="display: inline-flex; align-items: center; font-size: 15px; font-weight: 700; color: #1e293b;">
+            (
+            <input type="text" id="thinner_name" name="thinner_name" placeholder="e.g. 10540-TH" style="height: 28px; min-width: 130px; max-width: 220px; text-align: center; padding: 2px 10px; font-size: 13.5px; font-weight: 800; color: #1e293b; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 4px; margin: 0 4px;" title="Thinner / Code / Number (letters, numbers, dashes allowed)">
+            )
+          </span>
+        </span>
+      </h2>
       <div class="form-row-grid-4">
         <div class="field-box">
           <label for="thinner_batch">Batch Number</label>
@@ -848,25 +928,136 @@
 
 {% block extra_js %}
 <script>
-  function initDefaultDates() {
-    const today = new Date().toISOString().split('T')[0];
-    const future = new Date();
-    future.setFullYear(future.getFullYear() + 1);
-    const expDate = future.toISOString().split('T')[0];
+  // Field Partitioning: Shared vs Sheet-Specific Fields
+  const sharedFields = ['operator_id', 'shift'];
+  const sheetSpecificFields = [
+    'part_number',
+    'part_a_name', 'part_a_batch', 'part_a_mfg', 'part_a_exp', 'part_a_qty',
+    'part_b_name', 'part_b_batch', 'part_b_mfg', 'part_b_exp', 'part_b_qty',
+    'thinner_name', 'thinner_batch', 'thinner_mfg', 'thinner_exp', 'thinner_qty',
+    'min_viscosity', 'max_viscosity', 'actual_viscosity'
+  ];
 
-    if (!document.getElementById('part_a_mfg').value) document.getElementById('part_a_mfg').value = today;
-    if (!document.getElementById('part_a_exp').value) document.getElementById('part_a_exp').value = expDate;
-    if (!document.getElementById('part_b_mfg').value) document.getElementById('part_b_mfg').value = today;
-    if (!document.getElementById('part_b_exp').value) document.getElementById('part_b_exp').value = expDate;
-    if (!document.getElementById('thinner_mfg').value) document.getElementById('thinner_mfg').value = today;
-    if (!document.getElementById('thinner_exp').value) document.getElementById('thinner_exp').value = expDate;
+  const todayIso = new Date().toISOString().split('T')[0];
+  const nextYearIso = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  const defaultSheetData = {
+    "Primer ": {
+      part_number: "Primer Coat",
+      part_a_name: "",
+      part_a_batch: "PWH2636103140",
+      part_a_mfg: todayIso,
+      part_a_exp: nextYearIso,
+      part_a_qty: "4.0 L",
+      part_b_name: "",
+      part_b_batch: "PWH2636103141",
+      part_b_mfg: todayIso,
+      part_b_exp: nextYearIso,
+      part_b_qty: "1.0 L",
+      thinner_name: "",
+      thinner_batch: "THN20260901",
+      thinner_mfg: todayIso,
+      thinner_exp: nextYearIso,
+      thinner_qty: "0.5 L",
+      min_viscosity: "18.00",
+      max_viscosity: "24.00",
+      actual_viscosity: ""
+    },
+    "Paint Coat ": {
+      part_number: "Paint Top Coat",
+      part_a_name: "",
+      part_a_batch: "",
+      part_a_mfg: todayIso,
+      part_a_exp: nextYearIso,
+      part_a_qty: "4.0 L",
+      part_b_name: "",
+      part_b_batch: "",
+      part_b_mfg: todayIso,
+      part_b_exp: nextYearIso,
+      part_b_qty: "1.0 L",
+      thinner_name: "",
+      thinner_batch: "",
+      thinner_mfg: todayIso,
+      thinner_exp: nextYearIso,
+      thinner_qty: "0.5 L",
+      min_viscosity: "22.00",
+      max_viscosity: "28.00",
+      actual_viscosity: ""
+    }
+  };
+
+  // Dedicated in-memory & persistent storage for each sheet
+  let sheetForms = (() => {
+    try {
+      const stored = localStorage.getItem('walvoil_sheet_forms');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const p1 = Object.assign({}, defaultSheetData["Primer "], parsed["Primer "] || {});
+        const p2 = Object.assign({}, defaultSheetData["Paint Coat "], parsed["Paint Coat "] || {});
+        if (p1.part_a_name === 'Primer Base') p1.part_a_name = '';
+        if (p1.part_b_name === 'Primer Hardener') p1.part_b_name = '';
+        if (p1.thinner_name === 'Primer Thinner') p1.thinner_name = '';
+        if (p2.part_a_name === 'Top Coat Paint') p2.part_a_name = '';
+        if (p2.part_b_name === 'Top Coat Hardener') p2.part_b_name = '';
+        if (p2.thinner_name === 'Top Coat Thinner') p2.thinner_name = '';
+        return { "Primer ": p1, "Paint Coat ": p2 };
+      }
+    } catch(e) {}
+    return JSON.parse(JSON.stringify(defaultSheetData));
+  })();
+
+  function saveCurrentSheetToMemory(sheetName) {
+    if (!sheetName || !sheetForms[sheetName]) return;
+    sheetSpecificFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        sheetForms[sheetName][id] = el.value;
+      }
+    });
+    try {
+      localStorage.setItem('walvoil_sheet_forms', JSON.stringify(sheetForms));
+    } catch(e) {}
+  }
+
+  function loadSheetIntoDOM(sheetName) {
+    if (!sheetName || !sheetForms[sheetName]) return;
+    const data = sheetForms[sheetName];
+    sheetSpecificFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const fallback = defaultSheetData[sheetName] ? defaultSheetData[sheetName][id] : '';
+        const val = (data[id] !== undefined && data[id] !== null) ? data[id] : (fallback || '');
+        el.value = val;
+      }
+    });
+  }
+
+  function initDefaultDates() {
+    const curSheet = document.getElementById('process_type') ? document.getElementById('process_type').value : 'Primer ';
+    loadSheetIntoDOM(curSheet);
   }
   initDefaultDates();
 
-  // Template Switcher (Primer vs Paint Coat)
+  // Template Switcher (Primer vs Paint Coat) with Full Form Isolation
   let initialModeSet = false;
   function selectTemplate(templateName, broadcast = true) {
+    const prevTemplate = document.getElementById('process_type').value;
+
+    // 1. Save inputs of previous sheet before switching
+    if (prevTemplate && prevTemplate !== templateName) {
+      saveCurrentSheetToMemory(prevTemplate);
+    }
+
+    // 2. Set current sheet
     document.getElementById('process_type').value = templateName;
+
+    // 3. Restore inputs of selected sheet into DOM
+    loadSheetIntoDOM(templateName);
+
     const tabPrimer = document.getElementById('tab-primer');
     const tabPaint = document.getElementById('tab-paint');
     const targetLabel = document.getElementById('eval-target-label');
@@ -908,15 +1099,8 @@
       if (mobileSelect) {
         mobileSelect.style.borderColor = '#f59e0b';
       }
-      const partInput = document.getElementById('part_number');
-      if (partInput) {
-        partInput.value = 'Primer Coat';
-        partInput.placeholder = 'e.g. Primer Coat';
-      }
-      document.getElementById('min_viscosity').value = '18.00';
-      document.getElementById('max_viscosity').value = '24.00';
       if (initialModeSet && typeof showToast === 'function') {
-        showToast('Switched to Primer Coat (18.00 — 24.00 sec)', 'info');
+        showToast('Switched to Primer Coat (Isolated Sheet Data Loaded)', 'info');
       }
     } else {
       const topCard = document.getElementById('top-eval-card');
@@ -939,15 +1123,8 @@
       if (mobileSelect) {
         mobileSelect.style.borderColor = '#3b82f6';
       }
-      const partInput = document.getElementById('part_number');
-      if (partInput) {
-        partInput.value = 'Paint Top Coat';
-        partInput.placeholder = 'e.g. Paint Top Coat';
-      }
-      document.getElementById('min_viscosity').value = '22.00';
-      document.getElementById('max_viscosity').value = '28.00';
       if (initialModeSet && typeof showToast === 'function') {
-        showToast('Switched to Paint Top Coat (22.00 — 28.00 sec)', 'info');
+        showToast('Switched to Paint Top Coat (Isolated Sheet Data Loaded)', 'info');
       }
     }
     initialModeSet = true;
@@ -961,23 +1138,39 @@
   // Cross-Device Live Form Synchronization
   const syncFields = [
     'part_number', 'operator_id', 'shift',
-    'part_a_batch', 'part_a_mfg', 'part_a_exp', 'part_a_qty',
-    'part_b_batch', 'part_b_mfg', 'part_b_exp', 'part_b_qty',
-    'thinner_batch', 'thinner_mfg', 'thinner_exp', 'thinner_qty',
+    'part_a_name', 'part_a_batch', 'part_a_mfg', 'part_a_exp', 'part_a_qty',
+    'part_b_name', 'part_b_batch', 'part_b_mfg', 'part_b_exp', 'part_b_qty',
+    'thinner_name', 'thinner_batch', 'thinner_mfg', 'thinner_exp', 'thinner_qty',
     'min_viscosity', 'max_viscosity', 'actual_viscosity'
   ];
 
   let syncDebounceTimer = null;
   function broadcastFormChange(fieldId, val) {
+    const curSheet = document.getElementById('process_type').value || 'Primer ';
+
+    // Update local isolated sheet cache immediately
+    if (sheetSpecificFields.includes(fieldId)) {
+      if (!sheetForms[curSheet]) sheetForms[curSheet] = {};
+      sheetForms[curSheet][fieldId] = val;
+      try {
+        localStorage.setItem('walvoil_sheet_forms', JSON.stringify(sheetForms));
+      } catch(e) {}
+    }
+
     clearTimeout(syncDebounceTimer);
     syncDebounceTimer = setTimeout(() => {
       const payload = {
         cid: typeof myClientId !== 'undefined' ? myClientId : 'local',
         dev: typeof myDeviceType !== 'undefined' ? myDeviceType : 'PC',
+        sheet: curSheet,
+        active_process: curSheet,
         form_data: { [fieldId]: val }
       };
       if (fieldId === 'operator_id') {
         payload.operator = val;
+      }
+      if (fieldId === 'shift') {
+        payload.shift = val;
       }
       fetch('/api/session/update', {
         method: 'POST',
@@ -1026,7 +1219,96 @@
   let autoSaveCancelled = false;
   let stationIsOnline = false;
 
+  // EXPLICIT START TEST / LISTENER ACKNOWLEDGEMENT
+  let isListeningForHardware = false;
+  let listeningStartReadingId = null;
+  let listeningStartTime = null;
+  let currentStationReadingId = 0;
+
+  function toggleTestListening() {
+    if (isListeningForHardware) {
+      abortTestListening(false);
+    } else {
+      startTestListening();
+    }
+  }
+
+  function startTestListening() {
+    if (!stationIsOnline) {
+      showToast('Cannot start test: Viscometer station is currently OFFLINE.', 'error');
+      return;
+    }
+
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      const cBanner = document.getElementById('countdown-banner');
+      if (cBanner) cBanner.style.display = 'none';
+    }
+
+    isListeningForHardware = true;
+    listeningStartReadingId = currentStationReadingId;
+    listeningStartTime = Date.now();
+    autoSaveCancelled = false;
+
+    // Reset actual input display for fresh hardware measurement
+    const actualInput = document.getElementById('actual_viscosity');
+    if (actualInput) {
+      actualInput.value = '';
+      actualInput.placeholder = 'Listening for hardware measurement...';
+    }
+
+    // Update Status Badge to LISTENING
+    const badge = document.getElementById('eval-result-badge');
+    if (badge) {
+      badge.className = 'top-badge listening';
+      badge.innerText = 'LISTENING';
+      badge.style.background = '#fef3c7';
+      badge.style.color = '#92400e';
+    }
+
+    // Update Start Button
+    const btn = document.getElementById('btn-start-test');
+    const bIcon = document.getElementById('start-btn-icon');
+    const bText = document.getElementById('start-btn-text');
+    if (btn) btn.className = 'btn-start-action listening';
+    if (bIcon) bIcon.innerText = '⏹';
+    if (bText) bText.innerText = 'Stop / Abort';
+
+    const curSheet = document.getElementById('process_type').value.trim();
+    updateSubmitRowStatus(`👂 Armed: Waiting for viscometer reading on ${curSheet}...`, 'counting');
+    showToast(`Test Armed: Listening for latest reading on ${curSheet}...`, 'info');
+  }
+
+  function abortTestListening(silent = false) {
+    isListeningForHardware = false;
+    listeningStartReadingId = null;
+    listeningStartTime = null;
+
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      const cBanner = document.getElementById('countdown-banner');
+      if (cBanner) cBanner.style.display = 'none';
+    }
+
+    const btn = document.getElementById('btn-start-test');
+    const bIcon = document.getElementById('start-btn-icon');
+    const bText = document.getElementById('start-btn-text');
+    if (btn) btn.className = 'btn-start-action';
+    if (bIcon) bIcon.innerText = '▶';
+    if (bText) bText.innerText = 'Start Test';
+
+    calculateResult();
+    updateSubmitRowStatus('⏳ Awaiting Test Start (Click "Start Test" to begin)', 'waiting');
+    if (!silent) {
+      showToast('Test listening stopped.', 'info');
+    }
+  }
+
   function resetSaveStateForCoatSwitch() {
+    // Switching sheets NEVER auto-saves; it aborts any pending listener and stays in WAITING
+    abortTestListening(true);
     lastSavedViscosity = null;
     lastSavedCoat = null;
     autoSaveCancelled = false;
@@ -1034,12 +1316,15 @@
     if (banner) banner.style.display = 'none';
     const sBanner = document.getElementById('save-success-banner');
     if (sBanner) sBanner.style.display = 'none';
-    updateSubmitRowStatus('⏳ Awaiting Hardware Reading... (Auto-submits on measurement)', 'waiting');
+    updateSubmitRowStatus('⏳ Awaiting Test Start (Click "Start Test" to begin)', 'waiting');
   }
 
   // Hook telemetry updates and incoming session sync to page
   function onTelemetryUpdate(station, isOnline, session) {
     stationIsOnline = Boolean(isOnline);
+    if (station && station.reading_id !== undefined) {
+      currentStationReadingId = station.reading_id;
+    }
 
     const banner = document.getElementById('telemetry-banner');
     const bannerStatus = document.getElementById('banner-status-txt');
@@ -1054,6 +1339,9 @@
 
     // STRICT OFFLINE GUARD: Never auto-capture or auto-save when station is OFFLINE!
     if (!stationIsOnline) {
+      if (isListeningForHardware) {
+        abortTestListening(true);
+      }
       if (countdownTimer) {
         clearInterval(countdownTimer);
         countdownTimer = null;
@@ -1086,42 +1374,91 @@
       if (liveWrap) liveWrap.style.display = 'inline';
     }
 
-    // AUTOMATIC HARDWARE CAPTURE & AUTO-SUBMIT TRIGGER (ONLINE ONLY)
-    const liveVal = parseFloat(station.val);
-    if (!isNaN(liveVal) && liveVal > 0) {
-      const formatted = liveVal.toFixed(2);
-      const actualInput = document.getElementById('actual_viscosity');
-      const coat = document.getElementById('process_type').value;
+    // AUTOMATIC HARDWARE CAPTURE & AUTO-SUBMIT TRIGGER:
+    // ONLY TRIGGERS WHEN EXPLICITLY ARMED VIA "START TEST"
+    if (isListeningForHardware && stationIsOnline) {
+      const liveVal = parseFloat(station.val);
+      const isNewPacket = (station.reading_id !== undefined && listeningStartReadingId !== null)
+        ? (station.reading_id > listeningStartReadingId)
+        : (!isNaN(liveVal) && liveVal > 0 && (Date.now() - listeningStartTime > 500));
 
-      if (actualInput && actualInput.value !== formatted) {
-        actualInput.value = formatted;
-        actualInput.style.transition = 'background-color 0.4s ease';
-        actualInput.style.backgroundColor = '#dcfce7';
-        setTimeout(() => { actualInput.style.backgroundColor = ''; }, 1200);
-        broadcastFormChange('actual_viscosity', formatted);
-      }
-      calculateResult();
+      if (isNewPacket && !isNaN(liveVal) && liveVal > 0) {
+        // Valid, acknowledged new reading from viscometer!
+        isListeningForHardware = false; // Disarm listener immediately
 
-      // Trigger 10-second automatic save countdown ONLY when station is strictly ONLINE
-      if (!isSaving && !countdownTimer && !autoSaveCancelled && (lastSavedViscosity !== formatted || lastSavedCoat !== coat)) {
+        const formatted = liveVal.toFixed(2);
+        const actualInput = document.getElementById('actual_viscosity');
+        const coat = document.getElementById('process_type').value;
+
+        if (actualInput) {
+          actualInput.value = formatted;
+          actualInput.style.transition = 'background-color 0.4s ease';
+          actualInput.style.backgroundColor = '#dcfce7';
+          setTimeout(() => { actualInput.style.backgroundColor = ''; }, 1200);
+          broadcastFormChange('actual_viscosity', formatted);
+        }
+
+        // Update Start Button to Captured state
+        const btn = document.getElementById('btn-start-test');
+        const bIcon = document.getElementById('start-btn-icon');
+        const bText = document.getElementById('start-btn-text');
+        if (btn) btn.className = 'btn-start-action captured';
+        if (bIcon) bIcon.innerText = '✅';
+        if (bText) bText.innerText = 'Captured';
+
+        // Evaluate PASS or FAIL
+        calculateResult();
+
+        // Trigger 10-second automatic save countdown
         startAutoSaveCountdown(10, formatted);
       }
     }
 
     // Live Cross-Device Form Mirroring
-    if (session && session.form_data && (isInitialLoad || (session.updated_by && session.updated_by !== myClientId))) {
-      const fd = session.form_data;
-      if (fd.process_type && fd.process_type !== document.getElementById('process_type').value) {
-        selectTemplate(fd.process_type, false);
+    if (session && (isInitialLoad || (session.updated_by && session.updated_by !== myClientId))) {
+      const curSheet = document.getElementById('process_type').value || 'Primer ';
+
+      // Sync active process if another device switched sheets
+      if (session.active_process && session.active_process !== curSheet) {
+        selectTemplate(session.active_process, false);
       }
-      for (const [key, val] of Object.entries(fd)) {
-        if (key === 'process_type') continue;
-        const elem = document.getElementById(key);
-        // Only update if element exists, differs from current value, and operator is not actively typing in it
-        if (elem && elem !== document.activeElement && elem.value !== String(val)) {
-          elem.value = val;
-          if (key === 'min_viscosity' || key === 'max_viscosity' || key === 'actual_viscosity') {
-            calculateResult();
+
+      // Sync remote sheet_forms into local sheetForms cache
+      if (session.sheet_forms && typeof session.sheet_forms === 'object') {
+        for (const [sKey, sData] of Object.entries(session.sheet_forms)) {
+          const normKey = sKey.includes('Paint') ? 'Paint Coat ' : 'Primer ';
+          if (!sheetForms[normKey]) sheetForms[normKey] = {};
+          Object.assign(sheetForms[normKey], sData);
+        }
+        try {
+          localStorage.setItem('walvoil_sheet_forms', JSON.stringify(sheetForms));
+        } catch(e) {}
+      }
+
+      // Sync global operator & shift
+      if (session.operator) {
+        const opEl = document.getElementById('operator_id');
+        if (opEl && opEl !== document.activeElement && opEl.value !== session.operator) {
+          opEl.value = session.operator;
+        }
+      }
+      if (session.shift) {
+        const shEl = document.getElementById('shift');
+        if (shEl && shEl !== document.activeElement && shEl.value !== session.shift) {
+          shEl.value = session.shift;
+        }
+      }
+
+      // Sync active sheet fields into DOM if not actively being edited
+      const activeData = (session.sheet_forms && session.sheet_forms[curSheet]) || session.form_data;
+      if (activeData) {
+        for (const [key, val] of Object.entries(activeData)) {
+          const elem = document.getElementById(key);
+          if (elem && elem !== document.activeElement && elem.value !== String(val)) {
+            elem.value = val;
+            if (key === 'min_viscosity' || key === 'max_viscosity' || key === 'actual_viscosity') {
+              calculateResult();
+            }
           }
         }
       }
@@ -1245,6 +1582,16 @@
 
     const badge = document.getElementById('eval-result-badge');
 
+    if (isListeningForHardware) {
+      if (badge) {
+        badge.className = 'top-badge listening';
+        badge.style.background = '#fef3c7';
+        badge.style.color = '#92400e';
+        badge.innerText = 'LISTENING';
+      }
+      return;
+    }
+
     if (!isNaN(min) && !isNaN(max) && !isNaN(actual) && actual > 0) {
       const isPass = (actual >= min && actual <= max);
       if (badge) {
@@ -1277,10 +1624,16 @@
     lastSavedCoat = null;
     autoSaveCancelled = false;
 
-    document.getElementById('report-form').reset();
-    initDefaultDates();
-    selectTemplate('Primer ');
+    const curSheet = document.getElementById('process_type').value || 'Primer ';
+    sheetForms[curSheet] = JSON.parse(JSON.stringify(defaultSheetData[curSheet]));
+    loadSheetIntoDOM(curSheet);
+    try {
+      localStorage.setItem('walvoil_sheet_forms', JSON.stringify(sheetForms));
+    } catch(e) {}
+
+    broadcastFormChange('part_a_batch', sheetForms[curSheet].part_a_batch || '');
     updateSubmitRowStatus('⏳ Awaiting Hardware Reading... (Auto-submits on measurement)', 'waiting');
+    showToast(`Reset ${curSheet.trim()} inputs to defaults.`, 'info');
   }
 
   async function submitReport() {
@@ -1304,18 +1657,21 @@
       operator_id: document.getElementById('operator_id').value.trim(),
       shift: document.getElementById('shift').value.trim(),
       part_a: {
+        name: (document.getElementById('part_a_name')?.value || '').trim(),
         batch: document.getElementById('part_a_batch').value.trim(),
         mfg: document.getElementById('part_a_mfg').value,
         exp: document.getElementById('part_a_exp').value,
         qty: document.getElementById('part_a_qty').value.trim()
       },
       part_b: {
+        name: (document.getElementById('part_b_name')?.value || '').trim(),
         batch: document.getElementById('part_b_batch').value.trim(),
         mfg: document.getElementById('part_b_mfg').value,
         exp: document.getElementById('part_b_exp').value,
         qty: document.getElementById('part_b_qty').value.trim()
       },
       thinner: {
+        name: (document.getElementById('thinner_name')?.value || '').trim(),
         batch: document.getElementById('thinner_batch').value.trim(),
         mfg: document.getElementById('thinner_mfg').value,
         exp: document.getElementById('thinner_exp').value,
@@ -1336,6 +1692,14 @@
       if (data.success) {
         lastSavedViscosity = document.getElementById('actual_viscosity').value;
         lastSavedCoat = document.getElementById('process_type').value;
+
+        // Reset Start button to ready state for the next run
+        const btnStart = document.getElementById('btn-start-test');
+        const bIcon = document.getElementById('start-btn-icon');
+        const bText = document.getElementById('start-btn-text');
+        if (btnStart) btnStart.className = 'btn-start-action';
+        if (bIcon) bIcon.innerText = '▶';
+        if (bText) bText.innerText = 'Start Next Test';
 
         showToast(`Report saved! Result: ${data.result.toUpperCase()} | Saved to Reports 2026/`, 'success');
         showSaveSuccessBanner(data);

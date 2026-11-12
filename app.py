@@ -30,7 +30,7 @@ import re
 import signal
 import atexit
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, send_file, abort
+from flask import Flask, render_template, jsonify, request, send_file, abort, send_from_directory
 import openpyxl
 
 try:
@@ -242,6 +242,14 @@ def init_db():
     c.execute("CREATE INDEX IF NOT EXISTS idx_device_logs_ts ON device_logs(ts);")
     c.execute("CREATE INDEX IF NOT EXISTS idx_test_reports_created ON test_reports(created_at);")
     c.execute("CREATE INDEX IF NOT EXISTS idx_test_reports_part ON test_reports(part_number);")
+
+    # Dynamic migration: ensure custom material name/code columns exist
+    for col in ("part_a_name", "part_b_name", "thinner_name"):
+        try:
+            c.execute(f"ALTER TABLE test_reports ADD COLUMN {col} TEXT;")
+        except Exception:
+            pass
+
     conn.commit()
     conn.close()
     logger.info("[DATABASE] Initialized SQLite tables and indices with WAL mode.")
@@ -274,7 +282,8 @@ station_data = {
     "time": "--",
     "sender_ip": "Waiting...",
     "last_seen": 0,
-    "online": False
+    "online": False,
+    "reading_id": 0
 }
 
 active_clients = {}  # {client_id: {"ip": str, "device": str, "last_seen": float}}
@@ -283,6 +292,20 @@ shared_session = {
     "operator": "venkat",
     "updated_by": None,
     "updated_at": time.time(),
+    "active_process": "Primer ",
+    "shift": "Shift A",
+    "sheet_forms": {
+        "Primer ": {
+            "part_number": "Primer Coat",
+            "min_viscosity": "18.00",
+            "max_viscosity": "24.00"
+        },
+        "Paint Coat ": {
+            "part_number": "Paint Top Coat",
+            "min_viscosity": "22.00",
+            "max_viscosity": "28.00"
+        }
+    },
     "form_data": {}
 }
 
@@ -407,12 +430,13 @@ def _udp_loop():
 
                 with data_lock:
                     was_offline = not station_data["online"]
-                    station_data["name"]      = device_name
-                    station_data["val"]       = value
-                    station_data["time"]      = current_time
-                    station_data["sender_ip"] = sender_ip
-                    station_data["last_seen"] = time.time()
-                    station_data["online"]    = True
+                    station_data["name"]       = device_name
+                    station_data["val"]        = value
+                    station_data["time"]       = current_time
+                    station_data["sender_ip"]  = sender_ip
+                    station_data["last_seen"]  = time.time()
+                    station_data["online"]     = True
+                    station_data["reading_id"] = station_data.get("reading_id", 0) + 1
 
                 if was_offline:
                     logger.info(f"[UDP CONNECT] Telemetry stream active from {sender_ip}:{src_port}")
@@ -533,10 +557,18 @@ def generate_and_save_report(report_data: dict) -> dict:
     ws["F8"] = "Coat Details"
     ws["H8"] = part_number
 
-    # Section headers: rename Specification to Details
-    ws["A18"] = "PART A Material Details"
-    ws["A24"] = "PART B Material Details"
-    ws["A100"] = "Thinner Details"
+    part_a_name = str(part_a.get("name", "")).strip()
+    part_b_name = str(part_b.get("name", "")).strip()
+    thinner_name = str(thinner.get("name", "")).strip()
+
+    title_a = f"PART A Material Details ( {part_a_name} )" if part_a_name else "PART A Material Details"
+    title_b = f"PART B Material Details ( {part_b_name} )" if part_b_name else "PART B Material Details"
+    title_thinner = f"Thinner Details ( {thinner_name} )" if thinner_name else "Thinner Details"
+
+    # Section headers: rename Specification to Details with custom name in parentheses
+    ws["A18"] = title_a
+    ws["A24"] = title_b
+    ws["A100"] = title_thinner
 
     # PART A (Row 19 - 22)
     ws["G19"] = str(part_a.get("batch", ""))
@@ -713,7 +745,7 @@ def generate_and_save_report(report_data: dict) -> dict:
                 return t
 
             # Part A
-            elements.append(make_section('PART A Material Details', [
+            elements.append(make_section(title_a, [
                 ['Batch Number :', str(part_a.get("batch", ""))],
                 ['Manufacturing Date :', str(part_a.get("mfg", ""))],
                 ['Expiry Date :', str(part_a.get("exp", ""))],
@@ -722,7 +754,7 @@ def generate_and_save_report(report_data: dict) -> dict:
             elements.append(Spacer(1, 14))
 
             # Part B
-            elements.append(make_section('PART B Material Details', [
+            elements.append(make_section(title_b, [
                 ['Batch Number :', str(part_b.get("batch", ""))],
                 ['Manufacturing Date :', str(part_b.get("mfg", ""))],
                 ['Expiry Date :', str(part_b.get("exp", ""))],
@@ -731,7 +763,7 @@ def generate_and_save_report(report_data: dict) -> dict:
             elements.append(Spacer(1, 14))
 
             # Thinner
-            elements.append(make_section('Thinner Details', [
+            elements.append(make_section(title_thinner, [
                 ['Batch Number :', str(thinner.get("batch", ""))],
                 ['Manufacturing Date :', str(thinner.get("mfg", ""))],
                 ['Expiry Date :', str(thinner.get("exp", ""))],
@@ -845,13 +877,17 @@ def generate_and_save_report(report_data: dict) -> dict:
     cur.execute("""
         INSERT INTO test_reports (
             process_type, part_number, operator_id, shift,
-            part_a_batch, part_b_batch, thinner_batch,
+            part_a_name, part_a_batch,
+            part_b_name, part_b_batch,
+            thinner_name, thinner_batch,
             min_viscosity, max_viscosity, actual_viscosity,
             result, excel_path, pdf_path, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         sheet_target, part_number, operator_id, shift,
-        str(part_a.get("batch", "")), str(part_b.get("batch", "")), str(thinner.get("batch", "")),
+        part_a_name, str(part_a.get("batch", "")),
+        part_b_name, str(part_b.get("batch", "")),
+        thinner_name, str(thinner.get("batch", "")),
         min_visc, max_visc, actual_visc,
         result_str, excel_path, pdf_path, date_str
     ))
@@ -874,6 +910,14 @@ def generate_and_save_report(report_data: dict) -> dict:
 # ================================================================
 # FLASK HTTP ROUTES
 # ================================================================
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'favicon.ico',
+        mimetype='image/vnd.microsoft.icon'
+    )
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -892,11 +936,17 @@ def get_data():
         st_data = dict(station_data)
 
     with session_lock:
+        active_proc = shared_session.get("active_process", "Primer ")
+        sheet_forms = shared_session.get("sheet_forms", {})
+        active_form = dict(sheet_forms.get(active_proc, {}))
         curr_session = {
             "operator": shared_session["operator"],
+            "shift": shared_session.get("shift", "Shift A"),
+            "active_process": active_proc,
             "updated_by": shared_session["updated_by"],
             "updated_at": shared_session["updated_at"],
-            "form_data": dict(shared_session["form_data"])
+            "sheet_forms": sheet_forms,
+            "form_data": active_form
         }
 
     return jsonify({
@@ -922,20 +972,51 @@ def api_session_update():
         with session_lock:
             if "operator" in payload and payload["operator"]:
                 shared_session["operator"] = str(payload["operator"]).strip()
-            
+
+            if "shift" in payload and payload["shift"]:
+                shared_session["shift"] = str(payload["shift"]).strip()
+
+            if "active_process" in payload and payload["active_process"]:
+                proc = str(payload["active_process"]).strip()
+                shared_session["active_process"] = "Paint Coat " if "Paint" in proc else "Primer "
+
+            target_sheet = str(payload.get("sheet") or payload.get("process_type") or shared_session.get("active_process", "Primer ")).strip()
+            target_sheet = "Paint Coat " if "Paint" in target_sheet else "Primer "
+
+            if "sheet_forms" not in shared_session:
+                shared_session["sheet_forms"] = {}
+            if target_sheet not in shared_session["sheet_forms"]:
+                shared_session["sheet_forms"][target_sheet] = {}
+
             if "form_data" in payload and isinstance(payload["form_data"], dict):
-                shared_session["form_data"].update(payload["form_data"])
+                shared_session["sheet_forms"][target_sheet].update(payload["form_data"])
                 # Automatically sync session operator if operator_id input is edited
                 if "operator_id" in payload["form_data"] and payload["form_data"]["operator_id"]:
                     shared_session["operator"] = str(payload["form_data"]["operator_id"]).strip()
-            
+                if "shift" in payload["form_data"] and payload["form_data"]["shift"]:
+                    shared_session["shift"] = str(payload["form_data"]["shift"]).strip()
+
+            if "sheet_forms" in payload and isinstance(payload["sheet_forms"], dict):
+                for s_key, s_val in payload["sheet_forms"].items():
+                    norm_k = "Paint Coat " if "Paint" in s_key else "Primer "
+                    if norm_k not in shared_session["sheet_forms"]:
+                        shared_session["sheet_forms"][norm_k] = {}
+                    if isinstance(s_val, dict):
+                        shared_session["sheet_forms"][norm_k].update(s_val)
+
             shared_session["updated_by"] = cid
             shared_session["updated_at"] = time.time()
+            active_proc = shared_session.get("active_process", "Primer ")
+            sheet_forms = shared_session.get("sheet_forms", {})
+            active_form = dict(sheet_forms.get(active_proc, {}))
             curr = {
                 "operator": shared_session["operator"],
+                "shift": shared_session.get("shift", "Shift A"),
+                "active_process": active_proc,
                 "updated_by": shared_session["updated_by"],
                 "updated_at": shared_session["updated_at"],
-                "form_data": dict(shared_session["form_data"])
+                "sheet_forms": sheet_forms,
+                "form_data": active_form
             }
 
         return jsonify({
@@ -990,7 +1071,9 @@ def api_reports():
     conn = get_db_connection(row_factory=True)
     rows = conn.execute("""
         SELECT id, process_type, part_number, operator_id, shift,
-               part_a_batch, part_b_batch, thinner_batch,
+               part_a_name, part_a_batch,
+               part_b_name, part_b_batch,
+               thinner_name, thinner_batch,
                min_viscosity, max_viscosity, actual_viscosity,
                result, created_at
         FROM test_reports

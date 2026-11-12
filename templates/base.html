@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Walvoil Viscosity Administration{% endblock %}</title>
+  <!-- Favicon Icons -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <!-- Local Offline Typography (Roboto & Roboto Mono) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}">
   <style>
@@ -111,10 +115,11 @@
       text-decoration: none;
     }
     .nav-title-text {
-      font-size: 20px;
+      font-size: 24px;
       font-weight: 800;
       color: #fff;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 
     #user-tools {
@@ -211,6 +216,7 @@
       top: 54px;
       right: 12px;
       width: 280px;
+      max-width: calc(100vw - 24px);
       background: #ffffff;
       border-radius: 8px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -427,6 +433,154 @@
     .django-toast.success { background: #15803d; }
     .django-toast.error { background: #b91c1c; }
 
+    /* CUSTOM OPERATOR INPUT MODAL */
+    .custom-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .custom-modal-backdrop.active {
+      display: flex;
+      opacity: 1;
+    }
+    .custom-modal-card {
+      background: #ffffff;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      transform: translateY(-12px) scale(0.97);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .custom-modal-backdrop.active .custom-modal-card {
+      transform: translateY(0) scale(1);
+    }
+    .custom-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .custom-modal-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .custom-modal-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #ffedd5;
+      color: #c2410c;
+      font-size: 16px;
+    }
+    .custom-modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .custom-modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 0.15s, background-color 0.15s;
+    }
+    .custom-modal-close:hover {
+      color: #0f172a;
+      background: #e2e8f0;
+    }
+    .custom-modal-body {
+      padding: 20px 18px 16px 18px;
+    }
+    .custom-modal-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .custom-modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+      box-sizing: border-box;
+      color: #0f172a;
+    }
+    .custom-modal-input:focus {
+      border-color: #ea580c;
+      box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+    }
+    .custom-modal-help {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .custom-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 12px 18px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+    }
+    .custom-modal-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .custom-modal-btn.btn-secondary {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+    .custom-modal-btn.btn-secondary:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+      border-color: #94a3b8;
+    }
+    .custom-modal-btn.btn-primary {
+      background: #ea580c;
+      color: #ffffff;
+    }
+    .custom-modal-btn.btn-primary:hover {
+      background: #c2410c;
+    }
+
     /* BACKDROP FOR MOBILE DRAWER */
     #sidebar-backdrop {
       display: none;
@@ -445,34 +599,61 @@
     /* RESPONSIVE MEDIA QUERIES (MOBILE <= 768px) */
     @media (max-width: 768px) {
       #header {
-        padding: 0 12px;
+        padding: 0 10px;
+        gap: 8px;
+        justify-content: space-between;
       }
       #branding {
         gap: 8px;
+        flex-shrink: 0;
       }
       .nav-logo-wrap {
-        height: 28px;
+        height: 30px;
         padding: 2px 8px;
       }
       .nav-logo-img {
-        height: 20px;
+        height: 22px;
       }
       .header-center {
-        max-width: calc(100vw - 130px);
+        position: static;
+        transform: none;
+        flex: 1;
+        min-width: 0;
+        margin: 0 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        pointer-events: auto;
+        max-width: none;
+      }
+      .header-center a {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .nav-title-text {
-        font-size: 15px;
-        font-weight: 800;
+        font-size: 16px;
+        font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 190px;
+        display: block;
+        max-width: 100%;
+        letter-spacing: 0.2px;
+        line-height: 1.2;
       }
       #user-tools {
         display: none !important;
       }
       .dots-btn {
         display: flex !important;
+        flex-shrink: 0;
+        width: 34px;
+        height: 34px;
+        padding: 0;
       }
 
       .breadcrumbs {
@@ -522,6 +703,40 @@
       }
     }
 
+    @media (max-width: 480px) {
+      .nav-title-text {
+        font-size: 14.5px;
+      }
+      .nav-logo-wrap {
+        padding: 2px 6px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      #header {
+        padding: 0 8px;
+        gap: 6px;
+      }
+      #branding {
+        gap: 6px;
+      }
+      .nav-logo-wrap {
+        height: 28px;
+        padding: 2px 5px;
+      }
+      .nav-logo-img {
+        height: 19px;
+      }
+      .nav-title-text {
+        font-size: 13px;
+        letter-spacing: 0;
+      }
+      .burger-btn, .dots-btn {
+        width: 32px;
+        height: 32px;
+      }
+    }
+
   </style>
   {% block extra_css %}{% endblock %}
 </head>
@@ -557,18 +772,6 @@
       Operator: <strong id="nav-operator-name" style="cursor: pointer; text-decoration: underline; text-underline-offset: 3px;" title="Click to change operator" onclick="promptChangeOperator()">Operator</strong>
       <span>/</span>
       <span class="sys-time-badge" id="clock-display">--:--:--</span>
-      <span>/</span>
-      <span class="shift-live-pill">
-        <span class="shift-indicator-dot"></span>
-        <span id="nav-shift-name">Shift: Calculating...</span>
-      </span>
-      <span>/</span>
-      <span class="devices-live-pill" id="devices-live-pill" title="Connected dashboard sessions / web users">
-        <span class="devices-indicator-dot"></span>
-        <span id="devices-count-txt">1 Web User Connected</span>
-      </span>
-      <span>/</span>
-      <a href="/reports">Reports Archive</a>
     </div>
 
     <!-- MOBILE THREE-DOTS MENU BUTTON -->
@@ -606,14 +809,6 @@
       </span>
     </div>
 
-    <div class="m-user-section-title">Connected Web Users</div>
-    <div class="m-user-row" style="margin-bottom: 12px;">
-      <span class="devices-live-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; width: 100%;">
-        <span class="devices-indicator-dot" style="background: #16a34a; box-shadow: 0 0 6px #16a34a;"></span>
-        <span id="m-devices-count-txt">1 Web User Connected</span>
-      </span>
-    </div>
-
     <div style="border-top: 1px solid #e2e8f0; margin: 10px 0 8px 0;"></div>
 
     <div class="m-user-section-title">Quick Navigation</div>
@@ -645,7 +840,7 @@
         </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
           <span style="font-size: 14px;">👤</span>
-          <strong id="side-operator-name" style="font-size: 13px; color: #0f172a;">Operator</strong>
+          <strong id="side-operator-name" style="font-size: 13px; color: #0f172a;">---</strong>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #475569; margin-bottom: 6px;">
           <span>🕒</span>
@@ -654,10 +849,6 @@
         <div class="shift-live-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 10px; padding: 3px 8px; width: 100%; justify-content: flex-start;">
           <span class="shift-indicator-dot" style="background: #22c55e; box-shadow: 0 0 5px #22c55e;"></span>
           <span id="side-shift-name">Calculating Shift...</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: #475569; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">
-          <span class="devices-indicator-dot" style="background: #0ea5e9; box-shadow: 0 0 5px #0ea5e9;"></span>
-          <span id="side-devices-count-txt">1 Web User Connected</span>
         </div>
       </div>
 
@@ -694,6 +885,41 @@
     <main id="content-main">
       {% block content %}{% endblock %}
     </main>
+  </div>
+
+  <!-- CUSTOM OPERATOR SWITCH MODAL DIALOG -->
+  <div id="operator-modal-backdrop" class="custom-modal-backdrop" onclick="closeOperatorModal(event)">
+    <div id="operator-modal-card" class="custom-modal-card" onclick="event.stopPropagation()">
+      <div class="custom-modal-header">
+        <div class="custom-modal-title-wrap">
+          <span class="custom-modal-icon">👤</span>
+          <div>
+            <h3 class="custom-modal-title">Enter Operator ID / Name</h3>
+          </div>
+        </div>
+        <button type="button" class="custom-modal-close" onclick="closeOperatorModal()" aria-label="Close dialog">✕</button>
+      </div>
+      <form id="operator-modal-form" onsubmit="saveOperatorFromModal(event)">
+        <div class="custom-modal-body">
+          <label for="modal-operator-input" class="custom-modal-label">Operator ID / Name</label>
+          <input 
+            type="text" 
+            id="modal-operator-input" 
+            class="custom-modal-input" 
+            placeholder="e.g. OP-10538 or Operator Name" 
+            autocomplete="off" 
+            required
+          >
+          <p class="custom-modal-help">
+            This operator ID or name will be recorded on inspection reports, saved with test records, and synchronized across all active stations and devices.
+          </p>
+        </div>
+        <div class="custom-modal-footer">
+          <button type="button" class="custom-modal-btn btn-secondary" onclick="closeOperatorModal()">Cancel</button>
+          <button type="submit" class="custom-modal-btn btn-primary">Save Operator</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="toast" class="django-toast"></div>
@@ -792,31 +1018,82 @@
     const myDeviceType = isMobileDevice ? 'Mobile' : 'PC';
 
     function promptChangeOperator() {
+      // Close mobile dropdown if open
+      const dropdown = document.getElementById('mobile-user-dropdown');
+      if (dropdown) dropdown.classList.remove('open');
+
+      const modal = document.getElementById('operator-modal-backdrop');
+      const input = document.getElementById('modal-operator-input');
+      if (!modal || !input) return;
+
       const current = localStorage.getItem('walvoil_operator') || '';
-      const input = prompt('Enter Operator ID / Name:', current);
-      if (input !== null && input.trim() !== '') {
-        const val = input.trim();
-        localStorage.setItem('walvoil_operator', val);
-        const navOpElem = document.getElementById('nav-operator-name');
-        if (navOpElem) navOpElem.innerText = val;
-        const mNavOpElem = document.getElementById('m-nav-operator-name');
-        if (mNavOpElem) mNavOpElem.innerText = val;
-        const sideOpElem = document.getElementById('side-operator-name');
-        if (sideOpElem) sideOpElem.innerText = val;
-
-        const formOpElem = document.getElementById('operator_id');
-        if (formOpElem) formOpElem.value = val;
-
-        // Broadcast to other connected devices
-        fetch('/api/session/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cid: myClientId, dev: myDeviceType, operator: val })
-        }).catch(() => {});
-
-        showToast(`Active Operator set to: ${val}`, 'success');
-      }
+      input.value = (current === 'Operator') ? '' : current;
+      
+      modal.style.display = 'flex';
+      // Trigger CSS transition animation smoothly
+      setTimeout(() => {
+        modal.classList.add('active');
+        input.focus();
+        input.select();
+      }, 20);
     }
+
+    function closeOperatorModal(e) {
+      if (e && e.target && e.target.id !== 'operator-modal-backdrop' && !e.target.classList.contains('custom-modal-close') && !e.target.classList.contains('btn-secondary')) {
+        return;
+      }
+      const modal = document.getElementById('operator-modal-backdrop');
+      if (!modal) return;
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 200);
+    }
+
+    function saveOperatorFromModal(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('modal-operator-input');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) {
+        input.focus();
+        return;
+      }
+
+      localStorage.setItem('walvoil_operator', val);
+      const navOpElem = document.getElementById('nav-operator-name');
+      if (navOpElem) navOpElem.innerText = val;
+      const mNavOpElem = document.getElementById('m-nav-operator-name');
+      if (mNavOpElem) mNavOpElem.innerText = val;
+      const sideOpElem = document.getElementById('side-operator-name');
+      if (sideOpElem) sideOpElem.innerText = val;
+
+      const formOpElem = document.getElementById('operator_id');
+      if (formOpElem) {
+        formOpElem.value = val;
+        formOpElem.dataset.userEdited = 'true';
+      }
+
+      // Broadcast to other connected devices
+      fetch('/api/session/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cid: myClientId, dev: myDeviceType, operator: val })
+      }).catch(() => {});
+
+      showToast(`Active Operator set to: ${val}`, 'success');
+      closeOperatorModal();
+    }
+
+    // Keyboard shortcut: Escape closes the operator modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('operator-modal-backdrop');
+        if (modal && modal.classList.contains('active')) {
+          closeOperatorModal();
+        }
+      }
+    });
 
     syncOperator();
 
@@ -890,22 +1167,7 @@
           }
         }
 
-        // 2. Update Connected Web Users Count Badge
-        const count = data.clients_count || 1;
-        const devs = data.clients_devices || [myDeviceType];
-        let devLabel = `${count} Web User${count > 1 ? 's' : ''} Connected`;
-        if (count > 1) {
-          const uniqueDevs = [...new Set(devs)];
-          devLabel = `${count} Users (${uniqueDevs.join(' & ')})`;
-        }
-        const dTxt = document.getElementById('devices-count-txt');
-        if (dTxt) dTxt.innerText = devLabel;
-        const mdTxt = document.getElementById('m-devices-count-txt');
-        if (mdTxt) mdTxt.innerText = devLabel;
-        const sdTxt = document.getElementById('side-devices-count-txt');
-        if (sdTxt) sdTxt.innerText = devLabel;
-
-        // 3. Synchronize Active Operator from Shared Session
+        // 2. Synchronize Active Operator from Shared Session
         if (data.operator && data.operator !== 'Operator') {
           const navOpElem = document.getElementById('nav-operator-name');
           if (navOpElem) navOpElem.innerText = data.operator;
