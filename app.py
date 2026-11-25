@@ -309,6 +309,28 @@ shared_session = {
     "form_data": {}
 }
 
+def load_last_known_viscosity_ranges():
+    """Initializes shared_session with the latest viscosity tolerance ranges from previous tests."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        for proc in ("Primer ", "Paint Coat "):
+            c.execute("""
+                SELECT min_viscosity, max_viscosity 
+                FROM test_reports 
+                WHERE process_type LIKE ? 
+                ORDER BY id DESC LIMIT 1
+            """, (f"%{proc.strip()}%",))
+            row = c.fetchone()
+            if row and row[0] is not None and row[1] is not None:
+                shared_session["sheet_forms"][proc]["min_viscosity"] = f"{float(row[0]):.2f}"
+                shared_session["sheet_forms"][proc]["max_viscosity"] = f"{float(row[1]):.2f}"
+        conn.close()
+    except Exception as e:
+        logger.debug(f"[SESSION INIT] {e}")
+
+load_last_known_viscosity_ranges()
+
 def register_client(cid: str, ip: str, device: str):
     now = time.time()
     with clients_lock:
@@ -496,6 +518,9 @@ def start_background_services():
         threading.Thread(target=offline_monitor, daemon=True, name="offline-monitor").start()
         logger.info("[STARTUP] Background UDP listener and offline watchdog initialized.")
 
+# Ensure background UDP telemetry receiver & watchdog start under WSGI runners (e.g. Gunicorn in Docker)
+start_background_services()
+
 # ================================================================
 # REPORT GENERATION & HIERARCHICAL STORAGE LOGIC
 # ================================================================
@@ -561,9 +586,9 @@ def generate_and_save_report(report_data: dict) -> dict:
     part_b_name = str(part_b.get("name", "")).strip()
     thinner_name = str(thinner.get("name", "")).strip()
 
-    title_a = f"PART A Material Details ( {part_a_name} )" if part_a_name else "PART A Material Details"
-    title_b = f"PART B Material Details ( {part_b_name} )" if part_b_name else "PART B Material Details"
-    title_thinner = f"Thinner Details ( {thinner_name} )" if thinner_name else "Thinner Details"
+    title_a = f"PART A Material Details ( {part_a_name} )" if part_a_name else "PART A Material Details (          )"
+    title_b = f"PART B Material Details ( {part_b_name} )" if part_b_name else "PART B Material Details (          )"
+    title_thinner = f"Thinner Details ( {thinner_name} )" if thinner_name else "Thinner Details (          )"
 
     # Section headers: rename Specification to Details with custom name in parentheses
     ws["A18"] = title_a
@@ -588,7 +613,10 @@ def generate_and_save_report(report_data: dict) -> dict:
     ws["G103"] = str(thinner.get("exp", ""))
     ws["G104"] = str(thinner.get("qty", ""))
 
-    # Viscosity Test Spec & Actual (Row 108)
+    # Viscosity Test Spec & Actual (Row 107 Header & Row 108 Values)
+    ws.cell(row=107, column=7, value="Min (sec)")
+    ws.cell(row=107, column=8, value="Max (sec)")
+    ws.cell(row=107, column=9, value="Actual (sec)")
     ws.cell(row=108, column=7, value=min_visc)
     ws.cell(row=108, column=8, value=max_visc)
     ws.cell(row=108, column=9, value=actual_visc)
@@ -774,10 +802,10 @@ def generate_and_save_report(report_data: dict) -> dict:
             # 4. Viscosity Measurement Block
             visc_rows = [
                 ['Viscosity', '', '', '', ''],
-                ['', 'Min', 'Max', 'Actual', 'Result'],
+                ['', 'Min (sec)', 'Max (sec)', 'Actual (sec)', 'Result'],
                 ['Viscosity', f"{min_visc:.2f}", f"{max_visc:.2f}", f"{actual_visc:.2f}", result_str]
             ]
-            visc_table = Table(visc_rows, colWidths=[330, 61, 61, 61, 61])
+            visc_table = Table(visc_rows, colWidths=[294, 70, 70, 70, 70])
             visc_table.setStyle(TableStyle([
                 ('SPAN', (0,0), (-1,0)),
                 ('BACKGROUND', (0,0), (-1,0), cyan_bg),
@@ -786,13 +814,13 @@ def generate_and_save_report(report_data: dict) -> dict:
                 ('BACKGROUND', (1,2), (-1,2), gray_bg),
                 ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
                 ('FONTSIZE', (0,0), (0,0), 10),
-                ('FONTSIZE', (0,1), (-1,-1), 9),
+                ('FONTSIZE', (0,1), (-1,-1), 8.5),
                 ('ALIGN', (1,1), (-1,-1), 'CENTER'),
                 ('TEXTCOLOR', (4,2), (4,2), res_color),
                 ('TOPPADDING', (0,0), (-1,-1), 5),
                 ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-                ('LEFTPADDING', (0,0), (-1,-1), 8),
-                ('RIGHTPADDING', (0,0), (-1,-1), 8),
+                ('LEFTPADDING', (0,0), (-1,-1), 4),
+                ('RIGHTPADDING', (0,0), (-1,-1), 4),
                 ('INNERGRID', (0,0), (-1,-1), 0.75, border_color),
                 ('BOX', (0,0), (-1,-1), 1, border_color),
             ]))
@@ -1054,6 +1082,20 @@ def api_save_report():
             return jsonify({"success": False, "error": "Coat Details is required."}), 400
 
         result = generate_and_save_report(report_data)
+
+        # Persist the entered viscosity tolerance range into shared session memory
+        proc = str(report_data.get("process_type", "Primer ")).strip()
+        target_sheet = "Paint Coat " if "Paint" in proc else "Primer "
+        min_v = report_data.get("min_viscosity")
+        max_v = report_data.get("max_viscosity")
+        with session_lock:
+            if "sheet_forms" in shared_session and target_sheet in shared_session["sheet_forms"]:
+                if min_v is not None:
+                    shared_session["sheet_forms"][target_sheet]["min_viscosity"] = f"{float(min_v):.2f}"
+                if max_v is not None:
+                    shared_session["sheet_forms"][target_sheet]["max_viscosity"] = f"{float(max_v):.2f}"
+            shared_session["updated_at"] = time.time()
+
         return jsonify({
             "success": True,
             "id": result["id"],

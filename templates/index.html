@@ -1004,6 +1004,18 @@
         if (p2.part_a_name === 'Top Coat Paint') p2.part_a_name = '';
         if (p2.part_b_name === 'Top Coat Hardener') p2.part_b_name = '';
         if (p2.thinner_name === 'Top Coat Thinner') p2.thinner_name = '';
+
+        // Restore custom entered viscosity tolerances if previously saved
+        const m1 = localStorage.getItem('walvoil_min_viscosity_Primer ');
+        const M1 = localStorage.getItem('walvoil_max_viscosity_Primer ');
+        if (m1) p1.min_viscosity = m1;
+        if (M1) p1.max_viscosity = M1;
+
+        const m2 = localStorage.getItem('walvoil_min_viscosity_Paint Coat ');
+        const M2 = localStorage.getItem('walvoil_max_viscosity_Paint Coat ');
+        if (m2) p2.min_viscosity = m2;
+        if (M2) p2.max_viscosity = M2;
+
         return { "Primer ": p1, "Paint Coat ": p2 };
       }
     } catch(e) {}
@@ -1016,6 +1028,11 @@
       const el = document.getElementById(id);
       if (el) {
         sheetForms[sheetName][id] = el.value;
+        if (id === 'min_viscosity' || id === 'max_viscosity') {
+          try {
+            localStorage.setItem('walvoil_' + id + '_' + sheetName, el.value);
+          } catch(e) {}
+        }
       }
     });
     try {
@@ -1029,8 +1046,17 @@
     sheetSpecificFields.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
-        const fallback = defaultSheetData[sheetName] ? defaultSheetData[sheetName][id] : '';
-        const val = (data[id] !== undefined && data[id] !== null) ? data[id] : (fallback || '');
+        let val = (data[id] !== undefined && data[id] !== null && data[id] !== '') ? data[id] : '';
+        // If min or max viscosity, respect direct saved custom value
+        if (id === 'min_viscosity' || id === 'max_viscosity') {
+          const directSaved = localStorage.getItem('walvoil_' + id + '_' + sheetName);
+          if (directSaved) {
+            val = directSaved;
+          }
+        }
+        if (!val) {
+          val = defaultSheetData[sheetName] ? defaultSheetData[sheetName][id] : '';
+        }
         el.value = val;
       }
     });
@@ -1152,6 +1178,11 @@
     if (sheetSpecificFields.includes(fieldId)) {
       if (!sheetForms[curSheet]) sheetForms[curSheet] = {};
       sheetForms[curSheet][fieldId] = val;
+      if (fieldId === 'min_viscosity' || fieldId === 'max_viscosity') {
+        try {
+          localStorage.setItem('walvoil_' + fieldId + '_' + curSheet, val);
+        } catch(e) {}
+      }
       try {
         localStorage.setItem('walvoil_sheet_forms', JSON.stringify(sheetForms));
       } catch(e) {}
@@ -1423,8 +1454,9 @@
         selectTemplate(session.active_process, false);
       }
 
-      // Sync remote sheet_forms into local sheetForms cache
-      if (session.sheet_forms && typeof session.sheet_forms === 'object') {
+      // Sync remote sheet_forms into local sheetForms cache only if update was made by another client
+      const isFromOtherClient = session.updated_by && session.updated_by !== (typeof myClientId !== 'undefined' ? myClientId : '');
+      if (isFromOtherClient && session.sheet_forms && typeof session.sheet_forms === 'object') {
         for (const [sKey, sData] of Object.entries(session.sheet_forms)) {
           const normKey = sKey.includes('Paint') ? 'Paint Coat ' : 'Primer ';
           if (!sheetForms[normKey]) sheetForms[normKey] = {};
@@ -1449,15 +1481,17 @@
         }
       }
 
-      // Sync active sheet fields into DOM if not actively being edited
-      const activeData = (session.sheet_forms && session.sheet_forms[curSheet]) || session.form_data;
-      if (activeData) {
-        for (const [key, val] of Object.entries(activeData)) {
-          const elem = document.getElementById(key);
-          if (elem && elem !== document.activeElement && elem.value !== String(val)) {
-            elem.value = val;
-            if (key === 'min_viscosity' || key === 'max_viscosity' || key === 'actual_viscosity') {
-              calculateResult();
+      // Sync active sheet fields into DOM if incoming change is from another device
+      if (isFromOtherClient) {
+        const activeData = (session.sheet_forms && session.sheet_forms[curSheet]) || session.form_data;
+        if (activeData) {
+          for (const [key, val] of Object.entries(activeData)) {
+            const elem = document.getElementById(key);
+            if (elem && elem !== document.activeElement && elem.value !== String(val)) {
+              elem.value = val;
+              if (key === 'min_viscosity' || key === 'max_viscosity' || key === 'actual_viscosity') {
+                calculateResult();
+              }
             }
           }
         }
@@ -1625,6 +1659,10 @@
     autoSaveCancelled = false;
 
     const curSheet = document.getElementById('process_type').value || 'Primer ';
+    try {
+      localStorage.removeItem('walvoil_min_viscosity_' + curSheet);
+      localStorage.removeItem('walvoil_max_viscosity_' + curSheet);
+    } catch(e) {}
     sheetForms[curSheet] = JSON.parse(JSON.stringify(defaultSheetData[curSheet]));
     loadSheetIntoDOM(curSheet);
     try {
